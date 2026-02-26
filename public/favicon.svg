@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background rounded square -->
+  <rect width="32" height="32" rx="8" fill="#3b82f6"/>
+  <!-- Stethoscope icon (Lucide Stethoscope, scaled to fit 32x32, centered, white) -->
+  <!-- Original lucide viewBox is 24x24, scale 0.75x, offset ~4px to center in 32 -->
+  <g transform="translate(4, 4) scale(1)">
+    <!-- Lucide stethoscope path (24x24) in white -->
+    <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.3.3 0 1 0 .2.3"
+          stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M8 15a6 6 0 0 0 6 6h0a6 6 0 0 0 6-6v-3"
+          stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="20" cy="10" r="2" stroke="white" stroke-width="2" fill="none"/>
+  </g>
+</svg>
