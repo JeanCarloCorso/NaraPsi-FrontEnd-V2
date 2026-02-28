@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, UserCircle2, Calendar, Activity, Loader2, AlertCircle, CheckCircle, Phone, Paperclip, Trash2, FileEdit } from 'lucide-react';
 import api from '../services/api';
+import { maskCPF, maskRG, maskCEP, maskPhone, cleanDigits } from '../utils/masks';
+import { isValidEmail, isValidCPF, isValidDate, sanitizeText, formatEmail } from '../utils/validators';
 
 interface Paciente {
     id: number;
@@ -81,31 +83,9 @@ export default function Pacientes() {
     };
 
     const [formData, setFormData] = useState<PacienteFormData>(initialFormData);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-    // Funções de Máscara
-    const maskCPF = (value: string) => {
-        return value
-            .replace(/\D/g, '')
-            .replace(/(\d{3})(\d)/, '$1.$2')
-            .replace(/(\d{3})(\d)/, '$1.$2')
-            .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-            .replace(/(-\d{2})\d+?$/, '$1');
-    };
-
-    const maskPhone = (value: string) => {
-        return value
-            .replace(/\D/g, '')
-            .replace(/(\d{2})(\d)/, '($1) $2')
-            .replace(/(\d{5})(\d)/, '$1-$2')
-            .replace(/(-\d{4})\d+?$/, '$1');
-    };
-
-    const maskCEP = (value: string) => {
-        return value
-            .replace(/\D/g, '')
-            .replace(/(\d{5})(\d)/, '$1-$2')
-            .replace(/(-\d{3})\d+?$/, '$1');
-    };
+    // Usando máscaras centralizadas
 
     // Busca de CEP
     const handleCEPChange = async (index: number, cep: string) => {
@@ -242,18 +222,100 @@ export default function Pacientes() {
         }
     };
 
+    const validateForm = (): boolean => {
+        const newErrors: Record<string, string> = {};
+
+        if (!formData.nome.trim()) newErrors.nome = 'Nome é obrigatório';
+
+        if (formData.email && !isValidEmail(formData.email)) {
+            newErrors.email = 'E-mail inválido';
+        }
+
+        if (!formData.cpf) {
+            newErrors.cpf = 'CPF é obrigatório';
+        } else if (!isValidCPF(formData.cpf)) {
+            newErrors.cpf = 'CPF inválido';
+        }
+
+        if (!formData.data_nascimento) {
+            newErrors.data_nascimento = 'Data de nascimento é obrigatória';
+        } else if (!isValidDate(formData.data_nascimento)) {
+            newErrors.data_nascimento = 'Data inválida ou futura';
+        }
+
+        // Validação de Telefones
+        formData.telefones.forEach((tel, idx) => {
+            const clean = cleanDigits(tel.numero);
+            if (tel.numero && (clean.length < 10 || clean.length > 11)) {
+                newErrors[`telefone_${idx}`] = 'Telefone inválido';
+            }
+        });
+
+        // Validação de Familiares (Telefone)
+        formData.familiares.forEach((fam, idx) => {
+            if (fam.telefone) {
+                const cleanFam = cleanDigits(fam.telefone);
+                if (cleanFam.length < 10 || cleanFam.length > 11) {
+                    newErrors[`familiar_telefone_${idx}`] = 'Telefone inválido';
+                }
+            }
+        });
+
+        // Validação de CEPs
+        formData.enderecos.forEach((end, idx) => {
+            if (end.cep && cleanDigits(end.cep).length !== 8) {
+                newErrors[`cep_${idx}`] = 'CEP inválido';
+            }
+        });
+
+        setFieldErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSavePaciente = async () => {
-        if (!formData.nome || !formData.cpf) {
-            showToast('Nome e CPF são obrigatórios.', 'error');
+        if (!validateForm()) {
+            showToast('Por favor, corrija os erros no formulário.', 'error');
             return;
         }
 
         setIsSaving(true);
         try {
-            await api.post('/pacientes', formData);
+            // Sanitização do Payload
+            const payload = {
+                ...formData,
+                nome: sanitizeText(formData.nome),
+                email: formData.email ? formatEmail(formData.email) : '',
+                cpf: cleanDigits(formData.cpf),
+                rg: cleanDigits(formData.rg),
+                anotacoes: sanitizeText(formData.anotacoes),
+                telefones: formData.telefones.map(tel => ({
+                    ...tel,
+                    numero: cleanDigits(tel.numero),
+                    descricao: sanitizeText(tel.descricao)
+                })),
+                enderecos: formData.enderecos.map(end => ({
+                    ...end,
+                    endereco: sanitizeText(end.endereco),
+                    bairro: sanitizeText(end.bairro),
+                    cidade: sanitizeText(end.cidade),
+                    complemento: sanitizeText(end.complemento),
+                    descricao: sanitizeText(end.descricao),
+                    cep: cleanDigits(end.cep)
+                })),
+                familiares: formData.familiares.map(fam => ({
+                    ...fam,
+                    nome: sanitizeText(fam.nome),
+                    parentesco: sanitizeText(fam.parentesco),
+                    profissao: sanitizeText(fam.profissao),
+                    telefone: cleanDigits(fam.telefone)
+                }))
+            };
+
+            await api.post('/pacientes', payload);
             showToast('Paciente cadastrado com sucesso!');
             setShowModalNovoPaciente(false);
             setFormData(initialFormData);
+            setFieldErrors({});
             fetchPacientes();
         } catch (err: any) {
             console.error('Erro ao cadastrar paciente:', err);
@@ -459,9 +521,11 @@ export default function Pacientes() {
                                             type="text"
                                             value={formData.nome || ''}
                                             onChange={e => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all"
+                                            className={`w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border ${fieldErrors.nome ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all`}
                                             placeholder="Nome do paciente"
+                                            maxLength={100}
                                         />
+                                        {fieldErrors.nome && <p className="text-red-500 text-[10px] mt-1 ml-1">{fieldErrors.nome}</p>}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 ml-1">Sexo</label>
@@ -481,19 +545,21 @@ export default function Pacientes() {
                                             type="text"
                                             value={formData.cpf || ''}
                                             onChange={e => setFormData(prev => ({ ...prev, cpf: maskCPF(e.target.value) }))}
-                                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all"
+                                            className={`w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border ${fieldErrors.cpf ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all`}
                                             placeholder="000.000.000-00"
                                             maxLength={14}
                                         />
+                                        {fieldErrors.cpf && <p className="text-red-500 text-[10px] mt-1 ml-1">{fieldErrors.cpf}</p>}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 ml-1">RG</label>
                                         <input
                                             type="text"
                                             value={formData.rg || ''}
-                                            onChange={e => setFormData(prev => ({ ...prev, rg: e.target.value }))}
+                                            onChange={e => setFormData(prev => ({ ...prev, rg: maskRG(e.target.value) }))}
                                             className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all"
                                             placeholder="Número do RG"
+                                            maxLength={14}
                                         />
                                     </div>
                                     <div>
@@ -502,18 +568,21 @@ export default function Pacientes() {
                                             type="email"
                                             value={formData.email || ''}
                                             onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all"
+                                            className={`w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border ${fieldErrors.email ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all`}
                                             placeholder="email@exemplo.com"
+                                            maxLength={255}
                                         />
+                                        {fieldErrors.email && <p className="text-red-500 text-[10px] mt-1 ml-1">{fieldErrors.email}</p>}
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 ml-1">Data de Nascimento</label>
+                                        <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 ml-1">Data de Nascimento *</label>
                                         <input
                                             type="date"
                                             value={formData.data_nascimento || ''}
                                             onChange={e => setFormData(prev => ({ ...prev, data_nascimento: e.target.value }))}
-                                            className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all"
+                                            className={`w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border ${fieldErrors.data_nascimento ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all`}
                                         />
+                                        {fieldErrors.data_nascimento && <p className="text-red-500 text-[10px] mt-1 ml-1">{fieldErrors.data_nascimento}</p>}
                                     </div>
                                 </div>
                             </div>
@@ -541,10 +610,11 @@ export default function Pacientes() {
                                                     type="text"
                                                     value={tel.numero || ''}
                                                     onChange={e => updateTelefone(idx, 'numero', maskPhone(e.target.value))}
-                                                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-900 dark:text-white text-sm"
+                                                    className={`w-full px-3 py-1.5 bg-white dark:bg-slate-800 border ${fieldErrors[`telefone_${idx}`] ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg outline-none text-slate-900 dark:text-white text-sm`}
                                                     placeholder="(00) 00000-0000"
                                                     maxLength={15}
                                                 />
+                                                {fieldErrors[`telefone_${idx}`] && <p className="text-red-500 text-[10px] mt-1">{fieldErrors[`telefone_${idx}`]}</p>}
                                             </div>
                                             <div className="flex-1">
                                                 <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Descrição</label>
@@ -605,10 +675,11 @@ export default function Pacientes() {
                                                         type="text"
                                                         value={end.cep || ''}
                                                         onChange={e => handleCEPChange(idx, e.target.value)}
-                                                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-900 dark:text-white text-sm"
+                                                        className={`w-full px-3 py-1.5 bg-white dark:bg-slate-800 border ${fieldErrors[`cep_${idx}`] ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg outline-none text-slate-900 dark:text-white text-sm`}
                                                         placeholder="00000-000"
                                                         maxLength={9}
                                                     />
+                                                    {fieldErrors[`cep_${idx}`] && <p className="text-red-500 text-[10px] mt-1">{fieldErrors[`cep_${idx}`]}</p>}
                                                 </div>
                                                 <div className="md:col-span-2">
                                                     <label className="block text-[10px] font-bold text-slate-500 uppercase">Endereço (Rua/Av)</label>
@@ -626,6 +697,7 @@ export default function Pacientes() {
                                                         value={end.numero || ''}
                                                         onChange={e => updateEndereco(idx, 'numero', e.target.value)}
                                                         className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-900 dark:text-white text-sm"
+                                                        maxLength={10}
                                                     />
                                                 </div>
                                                 <div className="md:col-span-2">
@@ -635,6 +707,7 @@ export default function Pacientes() {
                                                         value={end.complemento || ''}
                                                         onChange={e => updateEndereco(idx, 'complemento', e.target.value)}
                                                         className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-900 dark:text-white text-sm"
+                                                        maxLength={100}
                                                     />
                                                 </div>
                                                 <div>
@@ -743,9 +816,12 @@ export default function Pacientes() {
                                                     <input
                                                         type="text"
                                                         value={fam.telefone || ''}
-                                                        onChange={e => updateFamiliar(idx, 'telefone', e.target.value)}
-                                                        className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-900 dark:text-white text-sm"
+                                                        onChange={e => updateFamiliar(idx, 'telefone', maskPhone(e.target.value))}
+                                                        className={`w-full px-3 py-1.5 bg-white dark:bg-slate-800 border ${fieldErrors[`familiar_telefone_${idx}`] ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg outline-none text-slate-900 dark:text-white text-sm`}
+                                                        placeholder="(00) 00000-0000"
+                                                        maxLength={15}
                                                     />
+                                                    {fieldErrors[`familiar_telefone_${idx}`] && <p className="text-red-500 text-[10px] mt-1">{fieldErrors[`familiar_telefone_${idx}`]}</p>}
                                                 </div>
                                                 <div className="lg:col-span-2">
                                                     <label className="block text-[10px] font-bold text-slate-500 uppercase">Profissão</label>

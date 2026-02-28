@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Users, PartyPopper, Loader2 } from 'lucide-react';
 import api from '../services/api';
+import { maskPhone } from '../utils/masks';
 
 interface HomeData {
     total_pacientes_masculino: number;
@@ -126,7 +127,7 @@ export default function Home() {
                                         <div>
                                             <p className="font-medium text-slate-800 dark:text-slate-200">{pessoa.nome}</p>
                                             {pessoa.telefone && (
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{pessoa.telefone}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{maskPhone(pessoa.telefone)}</p>
                                             )}
                                         </div>
                                         <div className="text-right">

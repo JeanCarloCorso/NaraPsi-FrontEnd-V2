@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { UserCircle, Save, Phone, MapPin, Briefcase, Loader2, Plus, Trash2, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import api from '../services/api';
 import { maskCPF, maskRG, maskCEP, maskPhone, cleanDigits } from '../utils/masks';
+import { isValidEmail, isValidCPF, isValidDate, sanitizeText, formatEmail } from '../utils/validators';
 
 interface ProfileEditPayload {
     nome: string;
@@ -30,6 +31,7 @@ export default function Profile() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     const [formData, setFormData] = useState<ProfileEditPayload>({
         nome: '',
@@ -101,6 +103,14 @@ export default function Profile() {
 
     const handleFieldChange = (field: keyof ProfileEditPayload, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+        // Limpar erro ao digitar
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
     };
 
     // Telefones
@@ -181,27 +191,82 @@ export default function Profile() {
         }));
     };
 
+    const validateForm = (): boolean => {
+        const newErrors: Record<string, string> = {};
+
+        if (!formData.nome.trim()) newErrors.nome = 'Nome é obrigatório';
+
+        if (formData.email && !isValidEmail(formData.email)) {
+            newErrors.email = 'E-mail inválido';
+        } else if (!formData.email) {
+            newErrors.email = 'E-mail é obrigatório';
+        }
+
+        if (formData.cpf && !isValidCPF(formData.cpf)) {
+            newErrors.cpf = 'CPF inválido';
+        }
+
+        if (!formData.data_nascimento) {
+            newErrors.data_nascimento = 'Data de nascimento é obrigatória';
+        } else if (!isValidDate(formData.data_nascimento)) {
+            newErrors.data_nascimento = 'Data inválida ou futura';
+        }
+
+        // Validar telefones
+        formData.telefones.forEach((tel, idx) => {
+            const cleanTel = cleanDigits(tel.numero);
+            if (tel.numero && (cleanTel.length < 10 || cleanTel.length > 11)) {
+                newErrors[`telefone_${idx}`] = 'Telefone incompleto';
+            }
+        });
+
+        // Validar endereços
+        formData.enderecos.forEach((end, idx) => {
+            if (end.cep && cleanDigits(end.cep).length !== 8) {
+                newErrors[`cep_${idx}`] = 'CEP incompleto';
+            }
+        });
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            setMessage({ type: 'error', text: 'Por favor, corrija os erros no formulário.' });
+            return;
+        }
+
         setIsSaving(true);
         setMessage(null);
 
         try {
-            // Preparar o payload (remover máscaras dos dígitos únicos caso o backend exija)
-            // Ou preservar conforme o planejado. Limparemos os dados estruturais
+            // Preparar o payload com sanitização
             const payload = {
                 ...formData,
-                cpf: cleanDigits(formData.cpf), // Assumindo backend puro para doc
+                nome: sanitizeText(formData.nome),
+                email: formatEmail(formData.email),
+                cpf: cleanDigits(formData.cpf),
                 rg: cleanDigits(formData.rg),
+                crp: sanitizeText(formData.crp),
+                especialidade: sanitizeText(formData.especialidade),
                 enderecos: formData.enderecos.map(end => ({
                     ...end,
+                    endereco: sanitizeText(end.endereco),
+                    bairro: sanitizeText(end.bairro),
+                    cidade: sanitizeText(end.cidade),
+                    complemento: sanitizeText(end.complemento),
+                    descricao: sanitizeText(end.descricao),
                     numero: Number(end.numero) || 0,
                     cep: cleanDigits(end.cep)
                 })),
                 telefones: formData.telefones.map(tel => ({
                     ...tel,
-                    numero: cleanDigits(tel.numero)
-                })) // Ajuste baseado em necessidade (se API exigir string apenas com nr)
+                    numero: cleanDigits(tel.numero),
+                    descricao: sanitizeText(tel.descricao)
+                }))
             };
 
             await api.put('/psicologo/me/editar', payload);
@@ -260,27 +325,31 @@ export default function Profile() {
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome Completo</label>
                                 <input type="text" value={formData.nome} onChange={(e) => handleFieldChange('nome', e.target.value)} required
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" />
+                                    className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${errors.nome ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} />
+                                {errors.nome && <p className="text-red-500 text-xs mt-1">{errors.nome}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</label>
                                 <input type="email" value={formData.email} onChange={(e) => handleFieldChange('email', e.target.value)} required
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" />
+                                    className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${errors.email ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} />
+                                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CPF</label>
                                 <input type="text" value={formData.cpf} onChange={(e) => handleFieldChange('cpf', maskCPF(e.target.value))} maxLength={14}
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" placeholder="000.000.000-00" />
+                                    className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${errors.cpf ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} placeholder="000.000.000-00" />
+                                {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">RG</label>
-                                <input type="text" value={formData.rg} onChange={(e) => handleFieldChange('rg', maskRG(e.target.value))} maxLength={12}
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" placeholder="00.000.000-0" />
+                                <input type="text" value={formData.rg} onChange={(e) => handleFieldChange('rg', maskRG(e.target.value))} maxLength={14} placeholder="RG ou CPF"
+                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data Nascimento</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data Nascimento *</label>
                                 <input type="date" value={formData.data_nascimento} onChange={(e) => handleFieldChange('data_nascimento', e.target.value)}
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 [&::-webkit-calendar-picker-indicator]:dark:invert" />
+                                    className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${errors.data_nascimento ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 [&::-webkit-calendar-picker-indicator]:dark:invert transition-all`} />
+                                {errors.data_nascimento && <p className="text-red-500 text-xs mt-1">{errors.data_nascimento}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sexo</label>
@@ -330,7 +399,8 @@ export default function Profile() {
                                     <div className="sm:col-span-5">
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Número</label>
                                         <input type="text" value={telefone.numero} onChange={(e) => handleTelefoneChange(index, 'numero', e.target.value)} placeholder="(00) 00000-0000" maxLength={15}
-                                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" />
+                                            className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border ${errors[`telefone_${index}`] ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} />
+                                        {errors[`telefone_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`telefone_${index}`]}</p>}
                                     </div>
                                     <div className="sm:col-span-6">
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descrição</label>
@@ -374,7 +444,8 @@ export default function Profile() {
                                         <div className="col-span-6 sm:col-span-2">
                                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CEP</label>
                                             <input type="text" value={endereco.cep} onChange={(e) => handleEnderecoChange(index, 'cep', e.target.value)} maxLength={9} placeholder="00000-000"
-                                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" />
+                                                className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border ${errors[`cep_${index}`] ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} />
+                                            {errors[`cep_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`cep_${index}`]}</p>}
                                         </div>
                                         <div className="col-span-6 sm:col-span-4">
                                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Rua / Logradouro</label>
