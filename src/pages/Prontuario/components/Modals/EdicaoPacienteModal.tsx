@@ -12,6 +12,7 @@ interface EdicaoPacienteModalProps {
     onUpdateArrayField: (field: 'telefones' | 'enderecos' | 'familiares', index: number, subField: string, value: any) => void;
     onAddArrayItem: (field: 'telefones' | 'enderecos' | 'familiares') => void;
     onRemoveArrayItem: (field: 'telefones' | 'enderecos' | 'familiares', index: number) => void;
+    fieldErrors: Record<string, string>;
 }
 
 export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
@@ -23,7 +24,8 @@ export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
     onUpdateField,
     onUpdateArrayField,
     onAddArrayItem,
-    onRemoveArrayItem
+    onRemoveArrayItem,
+    fieldErrors
 }) => {
     if (!isOpen) return null;
 
@@ -65,8 +67,10 @@ export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
                                     type="text"
                                     value={formData.nome || ''}
                                     onChange={(e) => onUpdateField('nome', e.target.value)}
-                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all"
+                                    className={`w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border ${fieldErrors.nome ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all`}
+                                    maxLength={100}
                                 />
+                                {fieldErrors.nome && <p className="text-red-500 text-[10px] mt-1 ml-1">{fieldErrors.nome}</p>}
                             </div>
                             <div>
                                 <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 ml-1">Sexo</label>
@@ -86,8 +90,9 @@ export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
                                     type="text"
                                     value={formData.cpf || ''}
                                     onChange={(e) => onUpdateField('cpf', e.target.value)}
-                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all"
+                                    className={`w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border ${fieldErrors.cpf ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all`}
                                 />
+                                {fieldErrors.cpf && <p className="text-red-500 text-[10px] mt-1 ml-1">{fieldErrors.cpf}</p>}
                             </div>
                             <div>
                                 <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 ml-1">RG</label>
@@ -96,16 +101,19 @@ export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
                                     value={formData.rg || ''}
                                     onChange={(e) => onUpdateField('rg', e.target.value)}
                                     className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all"
+                                    placeholder="Número do RG"
+                                    maxLength={14}
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 ml-1">Data de Nascimento</label>
+                                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 ml-1">Data de Nascimento *</label>
                                 <input
                                     type="date"
                                     value={formData.data_nascimento || ''}
                                     onChange={(e) => onUpdateField('data_nascimento', e.target.value)}
-                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all"
+                                    className={`w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border ${fieldErrors.data_nascimento ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all`}
                                 />
+                                {fieldErrors.data_nascimento && <p className="text-red-500 text-[10px] mt-1 ml-1">{fieldErrors.data_nascimento}</p>}
                             </div>
                             <div className="md:col-span-2 lg:col-span-3">
                                 <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 ml-1">E-mail</label>
@@ -113,8 +121,10 @@ export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
                                     type="email"
                                     value={formData.email || ''}
                                     onChange={(e) => onUpdateField('email', e.target.value)}
-                                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all"
+                                    className={`w-full px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border ${fieldErrors.email ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-xl focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white transition-all`}
+                                    maxLength={255}
                                 />
+                                {fieldErrors.email && <p className="text-red-500 text-[10px] mt-1 ml-1">{fieldErrors.email}</p>}
                             </div>
                         </div>
                     </div>
@@ -142,8 +152,9 @@ export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
                                             type="text"
                                             value={tel.numero}
                                             onChange={(e) => onUpdateArrayField('telefones', idx, 'numero', e.target.value)}
-                                            className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-900 dark:text-white text-sm"
+                                            className={`w-full px-3 py-1.5 bg-white dark:bg-slate-800 border ${fieldErrors[`telefone_${idx}`] ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg outline-none text-slate-900 dark:text-white text-sm`}
                                         />
+                                        {fieldErrors[`telefone_${idx}`] && <p className="text-red-500 text-[10px] mt-1">{fieldErrors[`telefone_${idx}`]}</p>}
                                     </div>
                                     <div className="flex-1">
                                         <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Descrição</label>
@@ -201,8 +212,9 @@ export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
                                                 type="text"
                                                 value={end.cep}
                                                 onChange={(e) => onUpdateArrayField('enderecos', idx, 'cep', e.target.value)}
-                                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-900 dark:text-white text-sm"
+                                                className={`w-full px-3 py-1.5 bg-white dark:bg-slate-800 border ${fieldErrors[`cep_${idx}`] ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg outline-none text-slate-900 dark:text-white text-sm`}
                                             />
+                                            {fieldErrors[`cep_${idx}`] && <p className="text-red-500 text-[10px] mt-1">{fieldErrors[`cep_${idx}`]}</p>}
                                         </div>
                                         <div className="md:col-span-2">
                                             <label className="block text-[10px] font-bold text-slate-500 uppercase">Endereço (Rua/Av)</label>
@@ -220,6 +232,7 @@ export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
                                                 value={end.numero}
                                                 onChange={(e) => onUpdateArrayField('enderecos', idx, 'numero', e.target.value)}
                                                 className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-900 dark:text-white text-sm"
+                                                maxLength={10}
                                             />
                                         </div>
                                         <div className="md:col-span-2">
@@ -229,6 +242,7 @@ export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
                                                 value={end.complemento}
                                                 onChange={(e) => onUpdateArrayField('enderecos', idx, 'complemento', e.target.value)}
                                                 className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-900 dark:text-white text-sm"
+                                                maxLength={100}
                                             />
                                         </div>
                                         <div className="md:col-span-2">
@@ -325,8 +339,10 @@ export const EdicaoPacienteModal: React.FC<EdicaoPacienteModalProps> = ({
                                                 type="text"
                                                 value={fam.telefone}
                                                 onChange={(e) => onUpdateArrayField('familiares', idx, 'telefone', e.target.value)}
-                                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg outline-none text-slate-900 dark:text-white text-sm"
+                                                className={`w-full px-3 py-1.5 bg-white dark:bg-slate-800 border ${fieldErrors[`familiar_telefone_${idx}`] ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg outline-none text-slate-900 dark:text-white text-sm`}
+                                                placeholder="(00) 00000-0000"
                                             />
+                                            {fieldErrors[`familiar_telefone_${idx}`] && <p className="text-red-500 text-[10px] mt-1">{fieldErrors[`familiar_telefone_${idx}`]}</p>}
                                         </div>
                                         <div className="lg:col-span-2">
                                             <label className="block text-[10px] font-bold text-slate-500 uppercase">Profissão</label>

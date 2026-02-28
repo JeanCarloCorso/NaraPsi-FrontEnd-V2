@@ -12,6 +12,7 @@ interface SessaoModalProps {
     setFormSessaoConteudo: (val: string) => void;
     isSaving: boolean;
     onSave: () => void;
+    fieldErrors: Record<string, string>;
 }
 
 export const SessaoModal: React.FC<SessaoModalProps> = ({
@@ -23,7 +24,8 @@ export const SessaoModal: React.FC<SessaoModalProps> = ({
     formSessaoConteudo,
     setFormSessaoConteudo,
     isSaving,
-    onSave
+    onSave,
+    fieldErrors
 }) => {
     if (!isOpen) return null;
 
@@ -67,8 +69,9 @@ export const SessaoModal: React.FC<SessaoModalProps> = ({
                             type="date"
                             value={formSessaoData}
                             onChange={(e) => setFormSessaoData(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none text-slate-900 dark:text-white transition-all"
+                            className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border ${fieldErrors.data ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none text-slate-900 dark:text-white transition-all`}
                         />
+                        {fieldErrors.data && <p className="text-red-500 text-xs mt-1 ml-1">{fieldErrors.data}</p>}
                     </div>
 
                     {/* Campo de Relato (TinyMCE) */}
@@ -77,7 +80,7 @@ export const SessaoModal: React.FC<SessaoModalProps> = ({
                             <FileText className="w-4 h-4 text-slate-400" />
                             Relato da Sessão
                         </label>
-                        <div className="flex-1 flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 min-h-[400px]">
+                        <div className={`flex-1 flex flex-col overflow-hidden border ${fieldErrors.conteudo ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-xl bg-white dark:bg-slate-900 min-h-[400px]`}>
                             <Editor
                                 apiKey={import.meta.env.VITE_API_TINY_KEY}
                                 value={formSessaoConteudo}
@@ -100,6 +103,7 @@ export const SessaoModal: React.FC<SessaoModalProps> = ({
                                 }}
                             />
                         </div>
+                        {fieldErrors.conteudo && <p className="text-red-500 text-xs mt-1 ml-1">{fieldErrors.conteudo}</p>}
                     </div>
                 </div>
 

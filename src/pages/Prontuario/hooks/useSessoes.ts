@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { prontuarioService } from '../services/prontuarioService';
+import { isValidDate } from '../../../utils/validators';
 import type { Sessao } from '../types';
 
 export function useSessoes(id: string, showToast: (msg: string, type?: 'success' | 'error') => void) {
@@ -18,6 +19,7 @@ export function useSessoes(id: string, showToast: (msg: string, type?: 'success'
     const [sessaoEdicaoId, setSessaoEdicaoId] = useState<number | null>(null);
     const [formSessaoData, setFormSessaoData] = useState('');
     const [formSessaoConteudo, setFormSessaoConteudo] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     const [sessaoConcluir, setSessaoConcluir] = useState<Sessao | null>(null);
     const [isFinishingSessao, setIsFinishingSessao] = useState(false);
@@ -86,6 +88,7 @@ export function useSessoes(id: string, showToast: (msg: string, type?: 'success'
         setSessaoEdicaoId(sessao.id_sessao);
         setFormSessaoData(sessao.data_sessao);
         setFormSessaoConteudo(sessao.conteudo || '');
+        setFieldErrors({});
         setShowModalSessao(true);
     };
 
@@ -93,12 +96,26 @@ export function useSessoes(id: string, showToast: (msg: string, type?: 'success'
         setSessaoEdicaoId(null);
         setFormSessaoData(new Date().toISOString().split('T')[0]);
         setFormSessaoConteudo('');
+        setFieldErrors({});
         setShowModalSessao(true);
     };
 
     const handleSaveSessao = async () => {
-        if (!formSessaoConteudo.trim()) {
-            showToast('Por favor, descreva o relato da sessão.', 'error');
+        const errors: Record<string, string> = {};
+
+        if (!formSessaoData) {
+            errors.data = 'Data é obrigatória';
+        } else if (!isValidDate(formSessaoData)) {
+            errors.data = 'Data inválida ou futura';
+        }
+
+        if (!formSessaoConteudo.trim() || formSessaoConteudo === '<p></p>') {
+            errors.conteudo = 'O relato da sessão não pode estar vazio';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            showToast('Por favor, corrija os erros no formulário.', 'error');
             return;
         }
 
@@ -179,6 +196,7 @@ export function useSessoes(id: string, showToast: (msg: string, type?: 'success'
         sessaoConcluir,
         setSessaoConcluir,
         isFinishingSessao,
-        handleFinishSession
+        handleFinishSession,
+        fieldErrors
     };
 }

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { prontuarioService } from '../services/prontuarioService';
+import { sanitizeText } from '../../../utils/validators';
 import type { Documento, Anexo } from '../types';
 
 export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 'success' | 'error') => void) {
@@ -107,7 +108,7 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
         setIsUploadingAnexo(true);
         const formData = new FormData();
         formData.append('file', uploadAnexoFile);
-        formData.append('descricao', uploadAnexoDescricao);
+        formData.append('descricao', sanitizeText(uploadAnexoDescricao));
 
         try {
             await prontuarioService.uploadAnexo(id, formData);

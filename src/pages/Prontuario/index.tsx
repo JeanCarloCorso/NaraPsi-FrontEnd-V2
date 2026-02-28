@@ -50,7 +50,8 @@ export default function Prontuario() {
         handleUpdateArrayField,
         handleAddArrayItem,
         handleRemoveArrayItem,
-        handleUpdatePaciente
+        handleUpdatePaciente,
+        fieldErrors: fieldErrorsPaciente
     } = useProntuario();
 
     const closeNotification = () => { /* Implicitly handled by hook */ };
@@ -83,6 +84,7 @@ export default function Prontuario() {
         handleDelete,
         handleFinishSession,
         handleDownload,
+        fieldErrors: fieldErrorsSessao
     } = useSessoes(id as string, showToast);
 
     // Hook de Anamnese
@@ -209,6 +211,7 @@ export default function Prontuario() {
                 onUpdateArrayField={handleUpdateArrayField}
                 onAddArrayItem={handleAddArrayItem}
                 onRemoveArrayItem={handleRemoveArrayItem}
+                fieldErrors={fieldErrorsPaciente}
             />
 
             <AnamneseModal
@@ -231,6 +234,7 @@ export default function Prontuario() {
                 setFormSessaoConteudo={setFormSessaoConteudo}
                 isSaving={isSavingSessao}
                 onSave={handleSaveSessao}
+                fieldErrors={fieldErrorsSessao}
             />
 
             <ConfirmacaoExclusaoModal

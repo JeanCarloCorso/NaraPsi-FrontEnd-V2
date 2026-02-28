@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft, UserCircle2, Calendar, Phone, Edit, FileEdit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { maskPhone } from '../../../utils/masks';
 import type { PacienteDetalhe } from '../types';
 
 interface HeaderProps {
@@ -43,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({ paciente, onEditClick, onAnamnes
                             </span>
                             <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                                 <Phone className="w-3.5 h-3.5 text-slate-400" />
-                                {paciente.telefones && paciente.telefones.length > 0 ? paciente.telefones[0].numero : 'Não informado'}
+                                {paciente.telefones && paciente.telefones.length > 0 ? maskPhone(paciente.telefones[0].numero) : 'Não informado'}
                             </span>
                         </div>
                     </div>

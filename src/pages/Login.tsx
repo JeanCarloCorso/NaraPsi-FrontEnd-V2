@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Stethoscope, Loader2, User, Lock, ArrowRight } from 'lucide-react';
 import api from '../services/api';
+import { sanitizeText } from '../utils/validators';
 
 interface LoginResponse {
     access_token: string;
@@ -18,18 +19,31 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string }>({});
     const navigate = useNavigate();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        setError('');
+        const sanitizedUsername = sanitizeText(username);
+        const trimmedPassword = password.trim();
+
+        if (!sanitizedUsername) {
+            setFieldErrors(prev => ({ ...prev, username: 'Informe o usuário' }));
+            setIsLoading(false);
+            return;
+        }
+
+        if (!trimmedPassword) {
+            setFieldErrors(prev => ({ ...prev, password: 'Informe a senha' }));
+            setIsLoading(false);
+            return;
+        }
 
         try {
             // POST request to /login
             const formData = new URLSearchParams();
-            formData.append('username', username);
-            formData.append('password', password);
+            formData.append('username', sanitizedUsername);
+            formData.append('password', trimmedPassword);
 
             const response = await api.post<LoginResponse>('/login', formData, {
                 headers: {
@@ -98,11 +112,17 @@ export default function Login() {
                                     <input
                                         type="text"
                                         value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
+                                        onChange={(e) => {
+                                            setUsername(e.target.value);
+                                            if (fieldErrors.username) setFieldErrors(prev => ({ ...prev, username: undefined }));
+                                        }}
                                         required
-                                        className="block w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all"
+                                        className={`block w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border ${fieldErrors.username ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-2xl text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all`}
                                         placeholder="nome.sobrenome"
                                     />
+                                    {fieldErrors.username && (
+                                        <p className="text-red-500 text-xs mt-1 ml-1 animate-in fade-in slide-in-from-top-1">{fieldErrors.username}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -118,11 +138,17 @@ export default function Login() {
                                     <input
                                         type="password"
                                         value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
+                                        onChange={(e) => {
+                                            setPassword(e.target.value);
+                                            if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: undefined }));
+                                        }}
                                         required
-                                        className="block w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all"
+                                        className={`block w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border ${fieldErrors.password ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-2xl text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all`}
                                         placeholder="******"
                                     />
+                                    {fieldErrors.password && (
+                                        <p className="text-red-500 text-xs mt-1 ml-1 animate-in fade-in slide-in-from-top-1">{fieldErrors.password}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
