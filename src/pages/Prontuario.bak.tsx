@@ -1314,7 +1314,7 @@ export default function Prontuario() {
                                         >
                                             <option value="Masculino">Masculino</option>
                                             <option value="Feminino">Feminino</option>
-                                            <option value="Outro">Outro</option>
+                                            <option value="Outros">Outros</option>
                                         </select>
                                     </div>
                                     <div>

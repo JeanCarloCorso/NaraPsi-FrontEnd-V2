@@ -22,6 +22,7 @@ import { ConfirmacaoExclusaoModal, ConfirmacaoConclusaoModal } from './component
 import { UploadAnexoModal } from './components/Modals/UploadAnexoModal';
 import { DocVisualizarModal } from './components/Modals/DocVisualizarModal';
 import { Toast } from './components/Modals/Toast';
+import { ChatNaraIA } from './components/ChatNaraIA';
 
 export default function Prontuario() {
     const { id } = useParams<{ id: string }>();
@@ -311,6 +312,11 @@ export default function Prontuario() {
             )}
 
             <Toast notification={notification} onClose={closeNotification} />
+
+            {/* Chat de IA */}
+            {paciente?.id_paciente && (
+                <ChatNaraIA pacienteId={paciente.id_paciente.toString()} />
+            )}
         </div>
     );
 }
