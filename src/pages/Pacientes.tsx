@@ -1,342 +1,44 @@
-import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, UserCircle2, Calendar, Activity, Loader2, AlertCircle, CheckCircle, Phone, Paperclip, Trash2, FileEdit } from 'lucide-react';
-import api from '../services/api';
-import { maskCPF, maskRG, maskCEP, maskPhone, cleanDigits } from '../utils/masks';
-import { isValidEmail, isValidCPF, isValidDate, sanitizeText, formatEmail } from '../utils/validators';
-
-interface Paciente {
-    id: number;
-    nome: string;
-    sexo: string;
-    idade: number;
-    ultima_data_sessao: string | null;
-}
-
-interface Telefone {
-    numero: string;
-    descricao: string;
-}
-
-interface Endereco {
-    cep: string;
-    endereco: string;
-    numero: string;
-    complemento: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
-    pais: string;
-    descricao: string;
-}
-
-interface Familiar {
-    nome: string;
-    parentesco: string;
-    profissao: string;
-    telefone: string;
-}
-
-interface PacienteFormData {
-    nome: string;
-    cpf: string;
-    rg: string;
-    email: string;
-    data_nascimento: string;
-    sexo: string;
-    telefones: Telefone[];
-    enderecos: Endereco[];
-    familiares: Familiar[];
-    anotacoes: string;
-}
-
-interface NotificationState {
-    message: string;
-    type: 'success' | 'error';
-    visible: boolean;
-}
+import { Search, Plus, UserCircle2, Calendar, Activity, Loader2, AlertCircle, Trash2, Phone, Paperclip, CheckCircle, FileEdit } from 'lucide-react';
+import { maskCPF, maskRG, maskPhone } from '@shared/utils/masks';
+import { usePacientesList } from '@features/pacientes/hooks/usePacientesList';
+import { usePacienteForm } from '@features/pacientes/hooks/usePacienteForm';
 
 export default function Pacientes() {
     const navigate = useNavigate();
-    const [pacientes, setPacientes] = useState<Paciente[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
 
-    // Modal de Novo Paciente
-    const [showModalNovoPaciente, setShowModalNovoPaciente] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const initialFormData = {
-        nome: '',
-        cpf: '',
-        rg: '',
-        email: '',
-        data_nascimento: '',
-        sexo: 'Feminino',
-        telefones: [{ numero: '', descricao: '' }],
-        enderecos: [{
-            cep: '', endereco: '', numero: '', complemento: '',
-            bairro: '', cidade: '', estado: '', pais: 'Brasil', descricao: ''
-        }],
-        familiares: [{ nome: '', parentesco: '', profissao: '', telefone: '' }],
-        anotacoes: ''
-    };
+    const {
+        filteredPacientes,
+        isLoading,
+        error,
+        searchTerm,
+        setSearchTerm,
+        fetchPacientes
+    } = usePacientesList();
 
-    const [formData, setFormData] = useState<PacienteFormData>(initialFormData);
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const {
+        formData,
+        setFormData,
+        fieldErrors,
+        isSaving,
+        showModalNovoPaciente,
+        setShowModalNovoPaciente,
+        notification,
+        setNotification,
+        handleCEPChange,
+        addTelefone,
+        removeTelefone,
+        updateTelefone,
+        addEndereco,
+        removeEndereco,
+        updateEndereco,
+        addFamiliar,
+        removeFamiliar,
+        updateFamiliar,
+        handleSavePaciente
+    } = usePacienteForm(fetchPacientes);
 
-    // Usando máscaras centralizadas
 
-    // Busca de CEP
-    const handleCEPChange = async (index: number, cep: string) => {
-        const maskedCEP = maskCEP(cep);
-        updateEndereco(index, 'cep', maskedCEP);
-
-        const cleanCEP = maskedCEP.replace(/\D/g, '');
-        if (cleanCEP.length === 8) {
-            try {
-                const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
-                const data = await response.json();
-
-                if (!data.erro) {
-                    setFormData(prev => ({
-                        ...prev,
-                        enderecos: prev.enderecos.map((end, i) => i === index ? {
-                            ...end,
-                            endereco: data.logradouro || end.endereco,
-                            bairro: data.bairro || end.bairro,
-                            cidade: data.localidade || end.cidade,
-                            estado: data.uf || end.estado
-                        } : end)
-                    }));
-                }
-            } catch (err) {
-                console.error("Erro ao buscar CEP:", err);
-            }
-        }
-    };
-
-    const [notification, setNotification] = useState<NotificationState>({
-        message: '',
-        type: 'success',
-        visible: false
-    });
-
-    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
-        setNotification({ message, type, visible: true });
-        setTimeout(() => {
-            setNotification(prev => ({ ...prev, visible: false }));
-        }, 3000);
-    };
-
-    // Funções auxiliares para Listas
-    const addTelefone = () => {
-        setFormData(prev => ({
-            ...prev,
-            telefones: [...prev.telefones, { numero: '', descricao: '' }]
-        }));
-    };
-
-    const removeTelefone = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            telefones: prev.telefones.filter((_, i) => i !== index)
-        }));
-    };
-
-    const updateTelefone = (index: number, field: keyof Telefone, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            telefones: prev.telefones.map((tel, i) => i === index ? { ...tel, [field]: value } : tel)
-        }));
-    };
-
-    const addEndereco = () => {
-        setFormData(prev => ({
-            ...prev,
-            enderecos: [...prev.enderecos, {
-                cep: '', endereco: '', numero: '', complemento: '',
-                bairro: '', cidade: '', estado: '', pais: 'Brasil', descricao: ''
-            }]
-        }));
-    };
-
-    const removeEndereco = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            enderecos: prev.enderecos.filter((_, i) => i !== index)
-        }));
-    };
-
-    const updateEndereco = (index: number, field: keyof Endereco, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            enderecos: prev.enderecos.map((end, i) => i === index ? { ...end, [field]: value } : end)
-        }));
-    };
-
-    const addFamiliar = () => {
-        setFormData(prev => ({
-            ...prev,
-            familiares: [...prev.familiares, { nome: '', parentesco: '', profissao: '', telefone: '' }]
-        }));
-    };
-
-    const removeFamiliar = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            familiares: prev.familiares.filter((_, i) => i !== index)
-        }));
-    };
-
-    const updateFamiliar = (index: number, field: keyof Familiar, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            familiares: prev.familiares.map((fam, i) => i === index ? { ...fam, [field]: value } : fam)
-        }));
-    };
-
-    useEffect(() => {
-        const fetchPacientes = async () => {
-            try {
-                const response = await api.get('/pacientes');
-                setPacientes(response.data);
-            } catch (err: any) {
-                setError(err.response?.data?.message || 'Erro ao carregar a lista de pacientes.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchPacientes();
-    }, []);
-
-    const fetchPacientes = async () => {
-        try {
-            const response = await api.get('/pacientes');
-            setPacientes(response.data);
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Erro ao carregar a lista de pacientes.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const validateForm = (): boolean => {
-        const newErrors: Record<string, string> = {};
-
-        if (!formData.nome.trim()) newErrors.nome = 'Nome é obrigatório';
-
-        if (formData.email && !isValidEmail(formData.email)) {
-            newErrors.email = 'E-mail inválido';
-        }
-
-        if (!formData.cpf) {
-            newErrors.cpf = 'CPF é obrigatório';
-        } else if (!isValidCPF(formData.cpf)) {
-            newErrors.cpf = 'CPF inválido';
-        }
-
-        if (!formData.data_nascimento) {
-            newErrors.data_nascimento = 'Data de nascimento é obrigatória';
-        } else if (!isValidDate(formData.data_nascimento)) {
-            newErrors.data_nascimento = 'Data inválida ou futura';
-        }
-
-        // Validação de Telefones
-        formData.telefones.forEach((tel, idx) => {
-            const clean = cleanDigits(tel.numero);
-            if (tel.numero && (clean.length < 10 || clean.length > 11)) {
-                newErrors[`telefone_${idx}`] = 'Telefone inválido';
-            }
-        });
-
-        // Validação de Familiares (Telefone)
-        formData.familiares.forEach((fam, idx) => {
-            if (fam.telefone) {
-                const cleanFam = cleanDigits(fam.telefone);
-                if (cleanFam.length < 10 || cleanFam.length > 11) {
-                    newErrors[`familiar_telefone_${idx}`] = 'Telefone inválido';
-                }
-            }
-        });
-
-        // Validação de CEPs
-        formData.enderecos.forEach((end, idx) => {
-            if (end.cep && cleanDigits(end.cep).length !== 8) {
-                newErrors[`cep_${idx}`] = 'CEP inválido';
-            }
-        });
-
-        setFieldErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSavePaciente = async () => {
-        if (!validateForm()) {
-            showToast('Por favor, corrija os erros no formulário.', 'error');
-            return;
-        }
-
-        setIsSaving(true);
-        try {
-            // Sanitização do Payload
-            const payload = {
-                ...formData,
-                nome: sanitizeText(formData.nome),
-                email: formData.email ? formatEmail(formData.email) : '',
-                cpf: cleanDigits(formData.cpf),
-                rg: cleanDigits(formData.rg),
-                anotacoes: sanitizeText(formData.anotacoes),
-                telefones: formData.telefones.map(tel => ({
-                    ...tel,
-                    numero: cleanDigits(tel.numero),
-                    descricao: sanitizeText(tel.descricao)
-                })),
-                enderecos: formData.enderecos.map(end => ({
-                    ...end,
-                    endereco: sanitizeText(end.endereco),
-                    bairro: sanitizeText(end.bairro),
-                    cidade: sanitizeText(end.cidade),
-                    complemento: sanitizeText(end.complemento),
-                    descricao: sanitizeText(end.descricao),
-                    cep: cleanDigits(end.cep)
-                })),
-                familiares: formData.familiares.map(fam => ({
-                    ...fam,
-                    nome: sanitizeText(fam.nome),
-                    parentesco: sanitizeText(fam.parentesco),
-                    profissao: sanitizeText(fam.profissao),
-                    telefone: cleanDigits(fam.telefone)
-                }))
-            };
-
-            await api.post('/pacientes', payload);
-            showToast('Paciente cadastrado com sucesso!');
-            setShowModalNovoPaciente(false);
-            setFormData(initialFormData);
-            setFieldErrors({});
-            fetchPacientes();
-        } catch (err: any) {
-            console.error('Erro ao cadastrar paciente:', err);
-            showToast(err.response?.data?.message || 'Erro ao cadastrar paciente. Tente novamente.', 'error');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    // Memoize the filtered list so we don't recalculate on every render unless deps change
-    const filteredPacientes = useMemo(() => {
-        // Only apply filter if the search term has 3 or more characters
-        if (searchTerm.trim().length >= 3) {
-            const lowerCaseSearch = searchTerm.toLowerCase();
-            return pacientes.filter(p =>
-                p.nome.toLowerCase().includes(lowerCaseSearch) ||
-                p.sexo.toLowerCase().includes(lowerCaseSearch)
-            );
-        }
-        return pacientes;
-    }, [pacientes, searchTerm]);
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return <span className="text-slate-400 dark:text-slate-500 italic">Sem sessões</span>;

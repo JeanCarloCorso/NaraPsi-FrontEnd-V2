@@ -3,26 +3,27 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, Plus, Calendar, Download } from 'lucide-react';
 
 // Hooks
-import { useProntuario } from './hooks/useProntuario';
-import { useSessoes } from './hooks/useSessoes';
-import { useAnamnese } from './hooks/useAnamnese';
-import { useDocumentosAnexos } from './hooks/useDocumentosAnexos';
+import { useProntuario } from '@features/prontuario/hooks/useProntuario';
+import { useSessoes } from '@features/prontuario/hooks/useSessoes';
+import { useAnamnese } from '@features/prontuario/hooks/useAnamnese';
+import { useDocumentosAnexos } from '@features/prontuario/hooks/useDocumentosAnexos';
 
 // Components - Layout
-import { Header } from './components/Header';
-import { SessoesList } from './components/SessoesList';
-import { DocumentosSection } from './components/Sidebar/DocumentosSection';
-import { AnexosSection } from './components/Sidebar/AnexosSection';
+import { Header } from '@features/prontuario/components/Header';
+import { SessoesList } from '@features/prontuario/components/SessoesList';
+import { DocumentosSection } from '@features/prontuario/components/Sidebar/DocumentosSection';
+import { AnexosSection } from '@features/prontuario/components/Sidebar/AnexosSection';
 
 // Components - Modals
-import { EdicaoPacienteModal } from './components/Modals/EdicaoPacienteModal';
-import { AnamneseModal } from './components/Modals/AnamneseModal';
-import { SessaoModal } from './components/Modals/SessaoModal';
-import { ConfirmacaoExclusaoModal, ConfirmacaoConclusaoModal } from './components/Modals/Confirmacoes';
-import { UploadAnexoModal } from './components/Modals/UploadAnexoModal';
-import { DocVisualizarModal } from './components/Modals/DocVisualizarModal';
-import { Toast } from './components/Modals/Toast';
-import { ChatNaraIA } from './components/ChatNaraIA';
+import { EdicaoPacienteModal } from '@features/prontuario/components/Modals/EdicaoPacienteModal';
+import { AnamneseModal } from '@features/prontuario/components/Modals/AnamneseModal';
+import { SessaoModal } from '@features/prontuario/components/Modals/SessaoModal';
+import { ConfirmacaoExclusaoModal, ConfirmacaoConclusaoModal } from '@features/prontuario/components/Modals/Confirmacoes';
+import { UploadAnexoModal } from '@features/prontuario/components/Modals/UploadAnexoModal';
+import { DocVisualizarModal } from '@features/prontuario/components/Modals/DocVisualizarModal';
+import { Toast } from '@features/prontuario/components/Modals/Toast';
+import { ChatNaraIA } from '@features/prontuario/components/ChatNaraIA';
+import type { PacienteFormData, Anamnese } from '@features/prontuario/types';
 
 export default function Prontuario() {
     const { id } = useParams<{ id: string }>();
@@ -208,7 +209,7 @@ export default function Prontuario() {
                 formData={formDataPaciente}
                 isSaving={isSavingPaciente}
                 onSave={handleUpdatePaciente}
-                onUpdateField={handleUpdateField}
+                onUpdateField={handleUpdateField as (field: keyof PacienteFormData, value: any) => void}
                 onUpdateArrayField={handleUpdateArrayField}
                 onAddArrayItem={handleAddArrayItem}
                 onRemoveArrayItem={handleRemoveArrayItem}
@@ -222,7 +223,7 @@ export default function Prontuario() {
                 isLoading={isLoadingAnamnese}
                 isSaving={isSavingAnamnese}
                 onSave={handleSaveAnamnese}
-                onUpdateField={handleUpdateAnamneseField}
+                onUpdateField={handleUpdateAnamneseField as (field: keyof Anamnese, value: any) => void}
             />
 
             <SessaoModal
