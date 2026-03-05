@@ -19,6 +19,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
     const perfis = JSON.parse(localStorage.getItem('perfis') || '[]');
     const isAdmin = perfis.includes('Administrador');
     const isPsicologo = perfis.includes('Psicologo');
+    const isPaciente = perfis.includes('Paciente');
 
     const navItems = [
         { name: 'Início', path: '/dashboard', icon: Home },
@@ -139,35 +140,39 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
                         </>
                     )}
 
-                    {/* Sessão Usuário */}
-                    <div className="pt-4 pb-2">
-                        <p className={`px-3 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider ${!isOpen && !isMobile ? 'text-center' : ''}`}>
-                            {(isOpen || isMobile) ? 'Usuário' : '...'}
-                        </p>
-                    </div>
-                    {userItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                className={({ isActive }) => `
-                                  flex items-center gap-3 px-3 py-3 rounded-xl transition-all group
-                                  ${isActive
-                                        ? 'bg-primary-50 dark:bg-slate-800 text-primary-700 dark:text-primary-400 font-medium'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
-                                    }
-                                  ${!isOpen && !isMobile ? 'justify-center' : ''}
-                                `}
-                                title={!isOpen && !isMobile ? item.name : ''}
-                            >
-                                <Icon className={`w-5 h-5 flex-shrink-0 ${!isOpen && !isMobile ? 'text-slate-400 group-hover:text-primary-500' : ''}`} />
-                                {(isOpen || isMobile) && (
-                                    <span className="truncate">{item.name}</span>
-                                )}
-                            </NavLink>
-                        );
-                    })}
+                    {/* Sessão Paciente */}
+                    {isPaciente && (
+                        <>
+                            <div className="pt-4 pb-2">
+                                <p className={`px-3 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider ${!isOpen && !isMobile ? 'text-center' : ''}`}>
+                                    {(isOpen || isMobile) ? 'Paciente' : '...'}
+                                </p>
+                            </div>
+                            {userItems.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <NavLink
+                                        key={item.path}
+                                        to={item.path}
+                                        className={({ isActive }) => `
+                                          flex items-center gap-3 px-3 py-3 rounded-xl transition-all group
+                                          ${isActive
+                                                ? 'bg-primary-50 dark:bg-slate-800 text-primary-700 dark:text-primary-400 font-medium'
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
+                                            }
+                                          ${!isOpen && !isMobile ? 'justify-center' : ''}
+                                        `}
+                                        title={!isOpen && !isMobile ? item.name : ''}
+                                    >
+                                        <Icon className={`w-5 h-5 flex-shrink-0 ${!isOpen && !isMobile ? 'text-slate-400 group-hover:text-primary-500' : ''}`} />
+                                        {(isOpen || isMobile) && (
+                                            <span className="truncate">{item.name}</span>
+                                        )}
+                                    </NavLink>
+                                );
+                            })}
+                        </>
+                    )}
                 </nav>
             </aside>
         </>
