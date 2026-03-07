@@ -1,0 +1,100 @@
+name: Release Frontend
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: "Tipo de versão"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build project
+        run: npm run build
+
+
+  release:
+
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+      - name: Fetch tags
+        run: git fetch --tags
+
+      - name: Calculate next version
+        id: version
+        run: |
+
+          LAST_TAG=$(git tag -l "v2.*" | sort -V | tail -n1)
+
+          if [ -z "$LAST_TAG" ]; then
+            MAJOR=2
+            MINOR=0
+            PATCH=0
+          else
+            VERSION=${LAST_TAG#v}
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          fi
+
+          if [ "${{ github.event.inputs.version_type }}" = "minor" ]; then
+            MINOR=$((MINOR+1))
+            PATCH=0
+          else
+            PATCH=$((PATCH+1))
+          fi
+
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "Nova versão: $NEW_TAG"
+
+      - name: Merge develop into master
+        run: |
+          git fetch origin
+          git checkout master
+          git merge origin/develop --no-ff -m "release ${{ steps.version.outputs.NEW_TAG }}"
+
+      - name: Create Tag
+        run: |
+          git tag ${{ steps.version.outputs.NEW_TAG }}
+          git push origin master
+          git push origin ${{ steps.version.outputs.NEW_TAG }}
