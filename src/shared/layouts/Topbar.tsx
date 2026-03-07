@@ -31,21 +31,30 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
     };
 
     const nome = localStorage.getItem('nome') || 'Usuário';
-    let perfilName = 'Profissional';
+    let perfilName = 'Visitante';
+    const perfisList: string[] = [];
     try {
-        const perfis = JSON.parse(localStorage.getItem('perfis') || '[]');
-        if (perfis.length > 0) {
-            perfilName = perfis[0].Perfil;
+        const rawPerfis = JSON.parse(localStorage.getItem('perfis') || '[]');
+        if (rawPerfis.length > 0) {
+            perfilName = typeof rawPerfis[0] === 'string' ? rawPerfis[0] : rawPerfis[0].Perfil;
         }
+        rawPerfis.forEach((p: any) => perfisList.push(typeof p === 'string' ? p : p.Perfil));
     } catch (e) {
         // ignore
     }
+
+    const canEditProfile = perfisList.includes('Administrador') || perfisList.includes('Psicologo');
 
     // Get current page name based on route
     const getPageName = () => {
         if (location.pathname === '/dashboard') return 'Início';
         if (location.pathname.startsWith('/pacientes')) return 'Pacientes';
         if (location.pathname.startsWith('/perfil')) return 'Meu Perfil';
+        if (location.pathname.startsWith('/paciente/home')) return 'Área do Paciente';
+        if (location.pathname.startsWith('/admin/dashboard')) return 'Dashboard Administrativo';
+        if (location.pathname.startsWith('/admin/usuarios')) return 'Gerenciar Usuários';
+        if (location.pathname.startsWith('/admin/perfis/novo')) return 'Criar Perfil';
+        if (location.pathname.startsWith('/admin/psicologo/novo')) return 'Criar Psicólogo';
         return 'Dashboard';
     };
 
@@ -101,14 +110,16 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
                                 <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{nome}</p>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{perfilName}</p>
                             </div>
-                            <Link
-                                to="/perfil"
-                                onClick={() => setIsDropdownOpen(false)}
-                                className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
-                            >
-                                <UserCircle className="w-4 h-4 text-slate-400" />
-                                Editar Perfil
-                            </Link>
+                            {canEditProfile && (
+                                <Link
+                                    to="/perfil"
+                                    onClick={() => setIsDropdownOpen(false)}
+                                    className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
+                                >
+                                    <UserCircle className="w-4 h-4 text-slate-400" />
+                                    Editar Perfil
+                                </Link>
+                            )}
                             <button
                                 onClick={toggleTheme}
                                 className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-between gap-2"

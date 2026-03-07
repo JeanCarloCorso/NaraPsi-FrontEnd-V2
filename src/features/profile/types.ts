@@ -27,3 +27,8 @@ export interface ProfileEditPayload {
     telefones: ProfileTelefone[];
     enderecos: ProfileEndereco[];
 }
+
+export interface AlterarSenhaPayload {
+    senha_antiga: string;
+    nova_senha: string;
+}

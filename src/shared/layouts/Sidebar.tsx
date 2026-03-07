@@ -6,7 +6,6 @@ import {
     Stethoscope,
     ShieldCheck,
     Settings,
-    UserCircle,
     UserPlus
 } from 'lucide-react';
 
@@ -17,10 +16,16 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
-    const perfis = JSON.parse(localStorage.getItem('perfis') || '[]');
-    const isAdmin = perfis.includes('Administrador');
-    const isPsicologo = perfis.includes('Psicologo');
-    const isPaciente = perfis.includes('Paciente');
+    let perfisList: string[] = [];
+    try {
+        const rawPerfis = JSON.parse(localStorage.getItem('perfis') || '[]');
+        perfisList = rawPerfis.map((p: any) => typeof p === 'string' ? p : p.Perfil);
+    } catch {
+        perfisList = [];
+    }
+    const isAdmin = perfisList.includes('Administrador');
+    const isPsicologo = perfisList.includes('Psicologo');
+    const isPaciente = perfisList.includes('Usuario') || perfisList.includes('Paciente');
 
     const navItems = [
         { name: 'Início', path: '/dashboard', icon: Home },
@@ -35,7 +40,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
     ];
 
     const userItems = [
-        { name: 'Meu Perfil', path: '/perfil', icon: UserCircle },
+        { name: 'Início', path: '/paciente/home', icon: Home },
     ];
 
     return (

@@ -12,8 +12,16 @@ interface NotificationState {
 export function useProfileForm() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isSavingSenha, setIsSavingSenha] = useState(false);
     const [message, setMessage] = useState<NotificationState | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [senhaErrors, setSenhaErrors] = useState<Record<string, string>>({});
+
+    const [senhaData, setSenhaData] = useState({
+        senhaAntiga: '',
+        novaSenha: '',
+        confirmarSenha: ''
+    });
 
     const [formData, setFormData] = useState<ProfileEditPayload>({
         nome: '',
@@ -252,6 +260,67 @@ export function useProfileForm() {
         }
     };
 
+    const handleSenhaFieldChange = (field: keyof typeof senhaData, value: string) => {
+        setSenhaData(prev => ({ ...prev, [field]: value }));
+        if (senhaErrors[field]) {
+            setSenhaErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
+    };
+
+    const validateSenhaForm = (): boolean => {
+        const newErrors: Record<string, string> = {};
+
+        if (!senhaData.senhaAntiga) {
+            newErrors.senhaAntiga = 'Senha antiga é obrigatória';
+        }
+
+        if (!senhaData.novaSenha) {
+            newErrors.novaSenha = 'Nova senha é obrigatória';
+        } else if (senhaData.novaSenha.length < 8) {
+            newErrors.novaSenha = 'A nova senha deve ter no mínimo 8 caracteres';
+        } else if (senhaData.novaSenha.length >= 256) {
+            newErrors.novaSenha = 'A nova senha não pode exceder 255 caracteres';
+        }
+
+        if (senhaData.novaSenha !== senhaData.confirmarSenha) {
+            newErrors.confirmarSenha = 'As senhas não coincidem';
+        }
+
+        setSenhaErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleUpdateSenha = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!validateSenhaForm()) {
+            setMessage({ type: 'error', text: 'Por favor, corrija os erros do formulário de senha.' });
+            return;
+        }
+
+        setIsSavingSenha(true);
+        setMessage(null);
+
+        try {
+            await profileService.alterarSenha({
+                senha_antiga: senhaData.senhaAntiga,
+                nova_senha: senhaData.novaSenha
+            });
+
+            setMessage({ type: 'success', text: 'Senha alterada com sucesso!' });
+            setSenhaData({ senhaAntiga: '', novaSenha: '', confirmarSenha: '' }); // Limpar formulário
+        } catch (err: any) {
+            const errorMsg = err.response?.data?.detail || 'Erro ao alterar a senha. Verifique se a senha atual está correta.';
+            setMessage({ type: 'error', text: typeof errorMsg === 'string' ? errorMsg : 'Erro ao alterar a senha.' });
+        } finally {
+            setIsSavingSenha(false);
+        }
+    };
+
     return {
         isLoading,
         isSaving,
@@ -265,6 +334,11 @@ export function useProfileForm() {
         handleEnderecoChange,
         addEndereco,
         removeEndereco,
-        handleSaveProfile
+        handleSaveProfile,
+        isSavingSenha,
+        senhaData,
+        senhaErrors,
+        handleSenhaFieldChange,
+        handleUpdateSenha
     };
 }

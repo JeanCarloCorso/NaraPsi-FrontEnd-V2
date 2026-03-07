@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import Pacientes from './pages/Pacientes'
 import Profile from './pages/Profile'
 import Prontuario from './pages/Prontuario'
+import PacienteHome from './pages/PacienteHome'
 import HomeAdm from '@features/admin/pages/HomeAdm'
 import UsuariosList from '@features/admin/pages/UsuariosList'
 import PerfisList from './features/admin/pages/PerfisList'
@@ -21,6 +22,7 @@ function App() {
           <Route path="/pacientes" element={<Pacientes />} />
           <Route path="/pacientes/:id" element={<Prontuario />} />
           <Route path="/perfil" element={<Profile />} />
+          <Route path="/paciente/home" element={<PacienteHome />} />
 
           {/* Rotas Administrativas */}
           <Route path="/admin/dashboard" element={<HomeAdm />} />

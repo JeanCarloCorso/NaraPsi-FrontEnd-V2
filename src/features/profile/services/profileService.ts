@@ -1,5 +1,5 @@
 import api from '@shared/api/apiClient';
-import type { ProfileEditPayload } from '../types';
+import type { ProfileEditPayload, AlterarSenhaPayload } from '../types';
 
 export const profileService = {
     async getProfile() {
@@ -9,6 +9,11 @@ export const profileService = {
 
     async updateProfile(payload: ProfileEditPayload) {
         const response = await api.put('/psicologo/me/editar', payload);
+        return response.data;
+    },
+
+    async alterarSenha(payload: AlterarSenhaPayload) {
+        const response = await api.put('/alterar-senha', payload);
         return response.data;
     }
 };

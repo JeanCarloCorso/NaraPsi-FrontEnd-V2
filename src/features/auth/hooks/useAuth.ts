@@ -43,8 +43,10 @@ export function useAuth() {
 
                 if (isAdmin) {
                     navigate('/admin/dashboard');
-                } else {
+                } else if (data.perfis.some(p => (typeof p === 'string' ? p : p.Perfil) === 'Psicologo')) {
                     navigate('/dashboard');
+                } else {
+                    navigate('/paciente/home');
                 }
             } else {
                 navigate('/');
