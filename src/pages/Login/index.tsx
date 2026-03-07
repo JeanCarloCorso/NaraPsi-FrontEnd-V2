@@ -1,62 +1,15 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Stethoscope, Loader2, User, Lock, ArrowRight } from 'lucide-react';
-import api from '../services/api';
-
-interface LoginResponse {
-    access_token: string;
-    token_type: string;
-    nome: string;
-    perfis: {
-        Perfil: string;
-        descricao: string;
-    }[];
-}
+import { useAuth } from '@features/auth/hooks/useAuth';
 
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
-    const navigate = useNavigate();
+    const { login, isLoading, error, fieldErrors, setFieldErrors } = useAuth();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        setError('');
-
-        try {
-            // POST request to /login
-            const formData = new URLSearchParams();
-            formData.append('username', username);
-            formData.append('password', password);
-
-            const response = await api.post<LoginResponse>('/login', formData, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
-
-            const data = response.data;
-
-            // Save data
-            localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('nome', data.nome);
-            localStorage.setItem('perfis', JSON.stringify(data.perfis));
-
-            // Redirect to route based on first profile (for now just /dashboard)
-            if (data.perfis && data.perfis.length > 0) {
-                navigate('/dashboard');
-            } else {
-                navigate('/');
-            }
-        } catch (err: any) {
-            setError(
-                err.response?.data?.detail || 'Erro ao realizar login. Verifique suas credenciais.'
-            );
-        } finally {
-            setIsLoading(false);
-        }
+        await login(username, password);
     };
 
     return (
@@ -98,11 +51,17 @@ export default function Login() {
                                     <input
                                         type="text"
                                         value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
+                                        onChange={(e) => {
+                                            setUsername(e.target.value);
+                                            if (fieldErrors.username) setFieldErrors(prev => ({ ...prev, username: undefined }));
+                                        }}
                                         required
-                                        className="block w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all"
+                                        className={`block w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border ${fieldErrors.username ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-2xl text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all`}
                                         placeholder="nome.sobrenome"
                                     />
+                                    {fieldErrors.username && (
+                                        <p className="text-red-500 text-xs mt-1 ml-1 animate-in fade-in slide-in-from-top-1">{fieldErrors.username}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -118,11 +77,17 @@ export default function Login() {
                                     <input
                                         type="password"
                                         value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
+                                        onChange={(e) => {
+                                            setPassword(e.target.value);
+                                            if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: undefined }));
+                                        }}
                                         required
-                                        className="block w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all"
+                                        className={`block w-full pl-11 pr-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border ${fieldErrors.password ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-2xl text-slate-900 dark:text-white text-sm placeholder-slate-400 dark:placeholder-slate-500 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all`}
                                         placeholder="******"
                                     />
+                                    {fieldErrors.password && (
+                                        <p className="text-red-500 text-xs mt-1 ml-1 animate-in fade-in slide-in-from-top-1">{fieldErrors.password}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -1,39 +1,12 @@
-import { useEffect, useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Users, PartyPopper, Loader2 } from 'lucide-react';
-import api from '../services/api';
-
-interface HomeData {
-    total_pacientes_masculino: number;
-    total_pacientes_feminino: number;
-    aniversariantes_do_dia: {
-        nome: string;
-        idade: number;
-        telefone: string | null;
-    }[];
-}
+import { maskPhone } from '@shared/utils/masks';
+import { useDashboard } from '@features/dashboard/hooks/useDashboard';
 
 const COLORS = ['#3b82f6', '#ec4899']; // Blue, Pink
 
 export default function Home() {
-    const [data, setData] = useState<HomeData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchHomeData = async () => {
-            try {
-                const response = await api.get('/home');
-                setData(response.data);
-            } catch (err: any) {
-                setError(err.message || 'Erro ao carregar dados do dashboard');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchHomeData();
-    }, []);
+    const { data, isLoading, error } = useDashboard();
 
     if (isLoading) {
         return (
@@ -126,7 +99,7 @@ export default function Home() {
                                         <div>
                                             <p className="font-medium text-slate-800 dark:text-slate-200">{pessoa.nome}</p>
                                             {pessoa.telefone && (
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{pessoa.telefone}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{maskPhone(pessoa.telefone)}</p>
                                             )}
                                         </div>
                                         <div className="text-right">

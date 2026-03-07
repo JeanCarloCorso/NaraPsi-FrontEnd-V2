@@ -4,7 +4,7 @@ import {
     UserCircle2, Phone, Calendar,
     Edit, FileText, FileEdit, Paperclip, Plus, ArrowLeft, Loader2, AlertCircle, ChevronDown, ChevronRight, Download, CheckCircle, Trash2, Eye, Image as ImageIcon
 } from 'lucide-react';
-import api from '../services/api';
+import api from '@shared/api/apiClient';
 import { Editor } from '@tinymce/tinymce-react';
 
 interface Familiar {
@@ -1314,7 +1314,7 @@ export default function Prontuario() {
                                         >
                                             <option value="Masculino">Masculino</option>
                                             <option value="Feminino">Feminino</option>
-                                            <option value="Outro">Outro</option>
+                                            <option value="Outros">Outros</option>
                                         </select>
                                     </div>
                                     <div>

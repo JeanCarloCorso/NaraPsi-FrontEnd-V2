@@ -1,219 +1,30 @@
-import { useEffect, useState } from 'react';
-import { UserCircle, Save, Phone, MapPin, Briefcase, Loader2, Plus, Trash2, CheckCircle2, AlertCircle, Info } from 'lucide-react';
-import api from '../services/api';
-import { maskCPF, maskRG, maskCEP, maskPhone, cleanDigits } from '../utils/masks';
-
-interface ProfileEditPayload {
-    nome: string;
-    cpf: string;
-    rg: string;
-    email: string;
-    data_nascimento: string;
-    sexo: string;
-    crp: string;
-    especialidade: string;
-    telefones: { numero: string; descricao: string }[];
-    enderecos: {
-        cep: string;
-        endereco: string;
-        numero: number | string;
-        complemento: string;
-        bairro: string;
-        cidade: string;
-        estado: string;
-        pais: string;
-        descricao: string;
-    }[];
-}
+import { UserCircle, Save, Phone, MapPin, Briefcase, Loader2, Plus, Trash2, CheckCircle2, AlertCircle, Info, Lock } from 'lucide-react';
+import { maskCPF, maskRG, cleanDigits } from '@shared/utils/masks';
+import { useProfileForm } from '@features/profile/hooks/useProfileForm';
 
 export default function Profile() {
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+    const {
+        isLoading,
+        isSaving,
+        message,
+        errors,
+        formData,
+        handleFieldChange,
+        handleTelefoneChange,
+        addTelefone,
+        removeTelefone,
+        handleEnderecoChange,
+        addEndereco,
+        removeEndereco,
+        handleSaveProfile,
+        isSavingSenha,
+        senhaData,
+        senhaErrors,
+        handleSenhaFieldChange,
+        handleUpdateSenha
+    } = useProfileForm();
 
-    const [formData, setFormData] = useState<ProfileEditPayload>({
-        nome: '',
-        cpf: '',
-        rg: '',
-        email: '',
-        data_nascimento: '',
-        sexo: '',
-        crp: '',
-        especialidade: '',
-        telefones: [{ numero: '', descricao: '' }],
-        enderecos: [{
-            cep: '', endereco: '', numero: '', complemento: '',
-            bairro: '', cidade: '', estado: '', pais: 'Brasil', descricao: 'Principal'
-        }]
-    });
-
-    useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const response = await api.get('/psicologo/me');
-                const data = response.data;
-                const pessoa = data.pessoa || {};
-                const psicologo = data.psicologo || {};
-
-                let telefones = data.telefones && data.telefones.length > 0 ? data.telefones : [{ numero: '', descricao: '' }];
-                let enderecos = data.enderecos && data.enderecos.length > 0 ? data.enderecos : [{
-                    cep: '', endereco: '', numero: '', complemento: '',
-                    bairro: '', cidade: '', estado: '', pais: 'Brasil', descricao: ''
-                }];
-
-                // Formatar dados vindos da API
-                telefones = telefones.map((t: any) => ({ ...t, numero: maskPhone(t.numero) }));
-                enderecos = enderecos.map((e: any) => ({ ...e, cep: maskCEP(e.cep) }));
-
-                const birthDate = pessoa.data_nascimento?.split(' ')[0] || '';
-
-                setFormData({
-                    nome: pessoa.nome || '',
-                    cpf: pessoa.cpf ? maskCPF(pessoa.cpf) : '',
-                    rg: pessoa.rg ? maskRG(pessoa.rg) : '',
-                    email: pessoa.email || '',
-                    data_nascimento: birthDate,
-                    sexo: pessoa.sexo || '',
-                    crp: psicologo.crp || '',
-                    especialidade: psicologo.especialidade || '',
-                    telefones,
-                    enderecos
-                });
-            } catch (err: any) {
-                setMessage({ type: 'error', text: 'Erro ao carregar os dados do perfil.' });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchProfile();
-    }, []);
-
-    // Efeito para limpar o Toast Message após 10s
-    useEffect(() => {
-        if (message) {
-            const timer = setTimeout(() => {
-                setMessage(null);
-            }, 10000); // 10s
-            return () => clearTimeout(timer);
-        }
-    }, [message]);
-
-    const handleFieldChange = (field: keyof ProfileEditPayload, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
-
-    // Telefones
-    const handleTelefoneChange = (index: number, field: string, value: string) => {
-        const parsedValue = field === 'numero' ? maskPhone(value) : value;
-        const newTelefones = [...formData.telefones];
-        newTelefones[index] = { ...newTelefones[index], [field]: parsedValue };
-        setFormData(prev => ({ ...prev, telefones: newTelefones }));
-    };
-
-    const addTelefone = () => {
-        setFormData(prev => ({
-            ...prev,
-            telefones: [...prev.telefones, { numero: '', descricao: '' }]
-        }));
-    };
-
-    const removeTelefone = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            telefones: prev.telefones.filter((_, i) => i !== index)
-        }));
-    };
-
-    // Endereços
-    const handleEnderecoChange = async (index: number, field: string, value: string | number) => {
-        const finalValue = field === 'cep' ? maskCEP(value as string) : value;
-
-        setFormData(prev => {
-            const newEnderecos = [...prev.enderecos];
-            newEnderecos[index] = { ...newEnderecos[index], [field]: finalValue };
-            return { ...prev, enderecos: newEnderecos };
-        });
-
-        // ViaCEP Autocomplete
-        if (field === 'cep') {
-            const cleanCep = cleanDigits(value as string);
-            if (cleanCep.length === 8) {
-                try {
-                    const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
-                    const viaCepData = await viaCepResponse.json();
-
-                    if (!viaCepData.erro) {
-                        setFormData(prev => {
-                            const newEnds = [...prev.enderecos];
-                            newEnds[index] = {
-                                ...newEnds[index],
-                                endereco: viaCepData.logradouro || newEnds[index].endereco,
-                                bairro: viaCepData.bairro || newEnds[index].bairro,
-                                cidade: viaCepData.localidade || newEnds[index].cidade,
-                                estado: viaCepData.uf || newEnds[index].estado,
-                            };
-                            return { ...prev, enderecos: newEnds };
-                        });
-                        setMessage({ type: 'info', text: 'Endereço autocompletado do ViaCEP.' });
-                    }
-                } catch (err) {
-                    console.error('Erro ao buscar CEP', err);
-                }
-            }
-        }
-    };
-
-    const addEndereco = () => {
-        setFormData(prev => ({
-            ...prev,
-            enderecos: [...prev.enderecos, {
-                cep: '', endereco: '', numero: '', complemento: '',
-                bairro: '', cidade: '', estado: '', pais: 'Brasil', descricao: ''
-            }]
-        }));
-    };
-
-    const removeEndereco = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            enderecos: prev.enderecos.filter((_, i) => i !== index)
-        }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSaving(true);
-        setMessage(null);
-
-        try {
-            // Preparar o payload (remover máscaras dos dígitos únicos caso o backend exija)
-            // Ou preservar conforme o planejado. Limparemos os dados estruturais
-            const payload = {
-                ...formData,
-                cpf: cleanDigits(formData.cpf), // Assumindo backend puro para doc
-                rg: cleanDigits(formData.rg),
-                enderecos: formData.enderecos.map(end => ({
-                    ...end,
-                    numero: Number(end.numero) || 0,
-                    cep: cleanDigits(end.cep)
-                })),
-                telefones: formData.telefones.map(tel => ({
-                    ...tel,
-                    numero: cleanDigits(tel.numero)
-                })) // Ajuste baseado em necessidade (se API exigir string apenas com nr)
-            };
-
-            await api.put('/psicologo/me/editar', payload);
-            setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
-
-            if (formData.nome) localStorage.setItem('nome', formData.nome);
-        } catch (err: any) {
-            setMessage({ type: 'error', text: err.response?.data?.message || 'Erro ao salvar perfil.' });
-        } finally {
-            setIsSaving(false);
-        }
-    };
+    const handleSubmit = handleSaveProfile;
 
     if (isLoading) {
         return (
@@ -260,27 +71,31 @@ export default function Profile() {
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome Completo</label>
                                 <input type="text" value={formData.nome} onChange={(e) => handleFieldChange('nome', e.target.value)} required
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" />
+                                    className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${errors.nome ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} />
+                                {errors.nome && <p className="text-red-500 text-xs mt-1">{errors.nome}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</label>
                                 <input type="email" value={formData.email} onChange={(e) => handleFieldChange('email', e.target.value)} required
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" />
+                                    className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${errors.email ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} />
+                                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CPF</label>
                                 <input type="text" value={formData.cpf} onChange={(e) => handleFieldChange('cpf', maskCPF(e.target.value))} maxLength={14}
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" placeholder="000.000.000-00" />
+                                    className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${errors.cpf ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} placeholder="000.000.000-00" />
+                                {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">RG</label>
-                                <input type="text" value={formData.rg} onChange={(e) => handleFieldChange('rg', maskRG(e.target.value))} maxLength={12}
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" placeholder="00.000.000-0" />
+                                <input type="text" value={formData.rg} onChange={(e) => handleFieldChange('rg', maskRG(e.target.value))} maxLength={14} placeholder="RG ou CPF"
+                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data Nascimento</label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data Nascimento *</label>
                                 <input type="date" value={formData.data_nascimento} onChange={(e) => handleFieldChange('data_nascimento', e.target.value)}
-                                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 [&::-webkit-calendar-picker-indicator]:dark:invert" />
+                                    className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${errors.data_nascimento ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 [&::-webkit-calendar-picker-indicator]:dark:invert transition-all`} />
+                                {errors.data_nascimento && <p className="text-red-500 text-xs mt-1">{errors.data_nascimento}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sexo</label>
@@ -330,7 +145,8 @@ export default function Profile() {
                                     <div className="sm:col-span-5">
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Número</label>
                                         <input type="text" value={telefone.numero} onChange={(e) => handleTelefoneChange(index, 'numero', e.target.value)} placeholder="(00) 00000-0000" maxLength={15}
-                                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" />
+                                            className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border ${errors[`telefone_${index}`] ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} />
+                                        {errors[`telefone_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`telefone_${index}`]}</p>}
                                     </div>
                                     <div className="sm:col-span-6">
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descrição</label>
@@ -374,7 +190,8 @@ export default function Profile() {
                                         <div className="col-span-6 sm:col-span-2">
                                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CEP</label>
                                             <input type="text" value={endereco.cep} onChange={(e) => handleEnderecoChange(index, 'cep', e.target.value)} maxLength={9} placeholder="00000-000"
-                                                className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200" />
+                                                className={`w-full px-3 py-2 bg-white dark:bg-slate-900 border ${errors[`cep_${index}`] ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} />
+                                            {errors[`cep_${index}`] && <p className="text-red-500 text-xs mt-1">{errors[`cep_${index}`]}</p>}
                                         </div>
                                         <div className="col-span-6 sm:col-span-4">
                                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Rua / Logradouro</label>
@@ -430,6 +247,49 @@ export default function Profile() {
                         >
                             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                             {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                        </button>
+                    </div>
+                </form>
+
+                <hr className="my-10 border-slate-200 dark:border-slate-800" />
+
+                <form onSubmit={handleUpdateSenha} className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                        <Lock className="w-5 h-5 text-slate-400" />
+                        <h2 className="text-lg font-medium text-slate-800 dark:text-slate-200">Segurança e Acesso</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Senha Atual *</label>
+                            <input type="password" value={senhaData.senhaAntiga} onChange={(e) => handleSenhaFieldChange('senhaAntiga', e.target.value)} required
+                                className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${senhaErrors.senhaAntiga ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} placeholder="Sua senha atual" />
+                            {senhaErrors.senhaAntiga && <p className="text-red-500 text-xs mt-1">{senhaErrors.senhaAntiga}</p>}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nova Senha *</label>
+                            <input type="password" value={senhaData.novaSenha} onChange={(e) => handleSenhaFieldChange('novaSenha', e.target.value)} required
+                                className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${senhaErrors.novaSenha ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} placeholder="No mínimo 8 caracteres" />
+                            {senhaErrors.novaSenha && <p className="text-red-500 text-xs mt-1">{senhaErrors.novaSenha}</p>}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Confirmar Nova Senha *</label>
+                            <input type="password" value={senhaData.confirmarSenha} onChange={(e) => handleSenhaFieldChange('confirmarSenha', e.target.value)} required
+                                className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${senhaErrors.confirmarSenha ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} placeholder="Repita a nova senha" />
+                            {senhaErrors.confirmarSenha && <p className="text-red-500 text-xs mt-1">{senhaErrors.confirmarSenha}</p>}
+                        </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                        <button
+                            type="submit"
+                            disabled={isSavingSenha}
+                            className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-70"
+                        >
+                            {isSavingSenha ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
+                            {isSavingSenha ? 'Alterando...' : 'Alterar Senha'}
                         </button>
                     </div>
                 </form>
