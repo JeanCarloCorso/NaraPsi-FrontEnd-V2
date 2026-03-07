@@ -54,6 +54,7 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
         if (location.pathname.startsWith('/admin/dashboard')) return 'Dashboard Administrativo';
         if (location.pathname.startsWith('/admin/usuarios')) return 'Gerenciar Usuários';
         if (location.pathname.startsWith('/admin/perfis/novo')) return 'Criar Perfil';
+        if (location.pathname.startsWith('/admin/perfis')) return 'Gerenciar Perfis';
         if (location.pathname.startsWith('/admin/psicologo/novo')) return 'Criar Psicólogo';
         return 'Dashboard';
     };
