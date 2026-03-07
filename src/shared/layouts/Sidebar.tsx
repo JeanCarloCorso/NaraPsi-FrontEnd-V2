@@ -6,7 +6,8 @@ import {
     Stethoscope,
     ShieldCheck,
     Settings,
-    UserCircle
+    UserCircle,
+    UserPlus
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -30,6 +31,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
         { name: 'Dashboard Adm', path: '/admin/dashboard', icon: Settings },
         { name: 'Usuários', path: '/admin/usuarios', icon: Users },
         { name: 'Perfis', path: '/admin/perfis', icon: ShieldCheck },
+        { name: 'Novo Psicólogo', path: '/admin/psicologo/novo', icon: UserPlus },
     ];
 
     const userItems = [

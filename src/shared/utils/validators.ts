@@ -80,3 +80,70 @@ export const sanitizeText = (text: string): string => {
 export const formatEmail = (email: string): string => {
     return email.trim().toLowerCase();
 };
+
+/**
+ * Formata CPF
+ */
+export const formatCPF = (value: string) => {
+    return value
+        .replace(/\D/g, '')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+        .replace(/(-\d{2})\d+?$/, '$1');
+};
+
+/**
+ * Formata RG
+ */
+export const formatRG = (value: string) => {
+    return value
+        .replace(/\D/g, '')
+        .replace(/(\d{2})(\d{3})(\d{3})(\d{1})/, '$1.$2.$3-$4')
+        .slice(0, 12);
+};
+
+/**
+ * Valida RG
+ */
+export const isValidRG = (rg: string): boolean => {
+    if (!rg) return true; // se opcional
+    return rg.replace(/\D/g, '').length >= 7;
+};
+
+/**
+ * Formata CRP
+ */
+export const formatCRP = (value: string) => {
+    const cleaned = value.replace(/[^0-9a-zA-Z]/g, ''); // Permite números e letras 
+    return cleaned.replace(/^(\d{2})(.+)/, '$1/$2').slice(0, 10);
+};
+
+/**
+ * Valida CRP
+ */
+export const isValidCRP = (crp: string): boolean => {
+    const cleaned = crp.replace(/[^0-9a-zA-Z]/g, '');
+    return cleaned.length >= 6;
+};
+
+/**
+ * Formata Telefone
+ */
+export const formatTelefone = (value: string) => {
+    const nums = value.replace(/\D/g, '');
+    if (nums.length <= 10) {
+        return nums.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').replace(/-$/, '');
+    }
+    return nums.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').slice(0, 15).replace(/-$/, '');
+};
+
+/**
+ * Formata CEP
+ */
+export const formatCEP = (value: string) => {
+    return value
+        .replace(/\D/g, '')
+        .replace(/(\d{5})(\d)/, '$1-$2')
+        .slice(0, 9);
+};

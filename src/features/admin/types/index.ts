@@ -39,3 +39,34 @@ export interface PerfilResponse {
     nome: string;
     descricao: string;
 }
+
+export interface PsicologoTelefonePayload {
+    numero: string;
+    descricao: string;
+}
+
+export interface PsicologoEnderecoPayload {
+    cep: string;
+    endereco: string;
+    numero: string;
+    complemento: string;
+    bairro: string;
+    cidade: string;
+    estado: string;
+    pais: string;
+    descricao: string;
+}
+
+export interface PsicologoCreatePayload {
+    nome: string;
+    cpf: string;
+    rg: string;
+    email: string;
+    data_nascimento: string;
+    sexo: string;
+    crp: string;
+    especialidade: string;
+    senha?: string;
+    telefones?: PsicologoTelefonePayload[];
+    enderecos?: PsicologoEnderecoPayload[];
+}

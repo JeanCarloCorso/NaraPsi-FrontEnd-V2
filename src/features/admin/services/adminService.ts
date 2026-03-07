@@ -5,7 +5,8 @@ import type {
     UpdateUsuarioRequest,
     PerfilResponse,
     CriarPerfilRequest,
-    CriarPerfilResponse
+    CriarPerfilResponse,
+    PsicologoCreatePayload
 } from '../types';
 
 export const adminService = {
@@ -31,6 +32,11 @@ export const adminService = {
 
     async criarPerfil(payload: CriarPerfilRequest): Promise<CriarPerfilResponse> {
         const response = await api.post(`${import.meta.env.VITE_API_URL}/perfis`, payload);
+        return response.data;
+    },
+
+    async criarPsicologo(payload: PsicologoCreatePayload): Promise<{ mensagem: string }> {
+        const response = await api.post(`${import.meta.env.VITE_API_URL}/psicologo-create`, payload);
         return response.data;
     }
 };
