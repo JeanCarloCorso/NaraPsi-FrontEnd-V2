@@ -37,7 +37,17 @@ export function useAuth() {
             authService.saveSession(data);
 
             if (data.perfis && data.perfis.length > 0) {
-                navigate('/dashboard');
+                const isAdmin = data.perfis.some(p =>
+                    (typeof p === 'string' ? p : p.Perfil) === 'Administrador'
+                );
+
+                if (isAdmin) {
+                    navigate('/admin/dashboard');
+                } else if (data.perfis.some(p => (typeof p === 'string' ? p : p.Perfil) === 'Psicologo')) {
+                    navigate('/dashboard');
+                } else {
+                    navigate('/paciente/home');
+                }
             } else {
                 navigate('/');
             }

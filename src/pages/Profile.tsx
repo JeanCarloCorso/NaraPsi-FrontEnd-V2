@@ -1,4 +1,4 @@
-import { UserCircle, Save, Phone, MapPin, Briefcase, Loader2, Plus, Trash2, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { UserCircle, Save, Phone, MapPin, Briefcase, Loader2, Plus, Trash2, CheckCircle2, AlertCircle, Info, Lock } from 'lucide-react';
 import { maskCPF, maskRG, cleanDigits } from '@shared/utils/masks';
 import { useProfileForm } from '@features/profile/hooks/useProfileForm';
 
@@ -16,7 +16,12 @@ export default function Profile() {
         handleEnderecoChange,
         addEndereco,
         removeEndereco,
-        handleSaveProfile
+        handleSaveProfile,
+        isSavingSenha,
+        senhaData,
+        senhaErrors,
+        handleSenhaFieldChange,
+        handleUpdateSenha
     } = useProfileForm();
 
     const handleSubmit = handleSaveProfile;
@@ -242,6 +247,49 @@ export default function Profile() {
                         >
                             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                             {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                        </button>
+                    </div>
+                </form>
+
+                <hr className="my-10 border-slate-200 dark:border-slate-800" />
+
+                <form onSubmit={handleUpdateSenha} className="space-y-6">
+                    <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                        <Lock className="w-5 h-5 text-slate-400" />
+                        <h2 className="text-lg font-medium text-slate-800 dark:text-slate-200">Segurança e Acesso</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Senha Atual *</label>
+                            <input type="password" value={senhaData.senhaAntiga} onChange={(e) => handleSenhaFieldChange('senhaAntiga', e.target.value)} required
+                                className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${senhaErrors.senhaAntiga ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} placeholder="Sua senha atual" />
+                            {senhaErrors.senhaAntiga && <p className="text-red-500 text-xs mt-1">{senhaErrors.senhaAntiga}</p>}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nova Senha *</label>
+                            <input type="password" value={senhaData.novaSenha} onChange={(e) => handleSenhaFieldChange('novaSenha', e.target.value)} required
+                                className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${senhaErrors.novaSenha ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} placeholder="No mínimo 8 caracteres" />
+                            {senhaErrors.novaSenha && <p className="text-red-500 text-xs mt-1">{senhaErrors.novaSenha}</p>}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Confirmar Nova Senha *</label>
+                            <input type="password" value={senhaData.confirmarSenha} onChange={(e) => handleSenhaFieldChange('confirmarSenha', e.target.value)} required
+                                className={`w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border ${senhaErrors.confirmarSenha ? 'border-red-500' : 'border-slate-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-slate-800 dark:text-slate-200 transition-all`} placeholder="Repita a nova senha" />
+                            {senhaErrors.confirmarSenha && <p className="text-red-500 text-xs mt-1">{senhaErrors.confirmarSenha}</p>}
+                        </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                        <button
+                            type="submit"
+                            disabled={isSavingSenha}
+                            className="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-6 py-2.5 rounded-xl font-medium shadow-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-70"
+                        >
+                            {isSavingSenha ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
+                            {isSavingSenha ? 'Alterando...' : 'Alterar Senha'}
                         </button>
                     </div>
                 </form>

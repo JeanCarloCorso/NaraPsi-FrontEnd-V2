@@ -19,7 +19,10 @@ export const authService = {
     saveSession(data: LoginResponse) {
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('nome', data.nome);
-        localStorage.setItem('perfis', JSON.stringify(data.perfis));
+        const perfisNames = Array.isArray(data.perfis)
+            ? data.perfis.map(p => (typeof p === 'string' ? p : p.Perfil))
+            : [];
+        localStorage.setItem('perfis', JSON.stringify(perfisNames));
     },
 
     clearSession() {

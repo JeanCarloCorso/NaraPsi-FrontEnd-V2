@@ -3,7 +3,10 @@ import {
     Home,
     Users,
     X,
-    Stethoscope
+    Stethoscope,
+    ShieldCheck,
+    Settings,
+    UserPlus
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -13,9 +16,31 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
+    let perfisList: string[] = [];
+    try {
+        const rawPerfis = JSON.parse(localStorage.getItem('perfis') || '[]');
+        perfisList = rawPerfis.map((p: any) => typeof p === 'string' ? p : p.Perfil);
+    } catch {
+        perfisList = [];
+    }
+    const isAdmin = perfisList.includes('Administrador');
+    const isPsicologo = perfisList.includes('Psicologo');
+    const isPaciente = perfisList.includes('Usuario') || perfisList.includes('Paciente');
+
     const navItems = [
         { name: 'Início', path: '/dashboard', icon: Home },
         { name: 'Pacientes', path: '/pacientes', icon: Users },
+    ];
+
+    const adminItems = [
+        { name: 'Dashboard Adm', path: '/admin/dashboard', icon: Settings },
+        { name: 'Usuários', path: '/admin/usuarios', icon: Users },
+        { name: 'Perfis', path: '/admin/perfis', icon: ShieldCheck },
+        { name: 'Novo Psicólogo', path: '/admin/psicologo/novo', icon: UserPlus },
+    ];
+
+    const userItems = [
+        { name: 'Início', path: '/paciente/home', icon: Home },
     ];
 
     return (
@@ -53,29 +78,108 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
 
                 {/* Navigation */}
                 <nav className="flex-1 py-4 px-3 space-y-1 bg-white dark:bg-slate-900 overflow-y-auto">
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                className={({ isActive }) => `
-                                  flex items-center gap-3 px-3 py-3 rounded-xl transition-all group
-                                  ${isActive
-                                        ? 'bg-primary-50 dark:bg-slate-800 text-primary-700 dark:text-primary-400 font-medium'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
-                                    }
-                                  ${!isOpen && !isMobile ? 'justify-center' : ''}
-                                `}
-                                title={!isOpen && !isMobile ? item.name : ''}
-                            >
-                                <Icon className={`w-5 h-5 flex-shrink-0 ${!isOpen && !isMobile ? 'text-slate-400 group-hover:text-primary-500' : ''}`} />
-                                {(isOpen || isMobile) && (
-                                    <span className="truncate">{item.name}</span>
-                                )}
-                            </NavLink>
-                        );
-                    })}
+
+                    {/* Sessão Administrador */}
+                    {isAdmin && (
+                        <>
+                            <div className="pt-2 pb-2">
+                                <p className={`px-3 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider ${!isOpen && !isMobile ? 'text-center' : ''}`}>
+                                    {(isOpen || isMobile) ? 'Administração' : '...'}
+                                </p>
+                            </div>
+                            {adminItems.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <NavLink
+                                        key={item.path}
+                                        to={item.path}
+                                        className={({ isActive }) => `
+                                          flex items-center gap-3 px-3 py-3 rounded-xl transition-all group
+                                          ${isActive
+                                                ? 'bg-primary-50 dark:bg-slate-800 text-primary-700 dark:text-primary-400 font-medium'
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
+                                            }
+                                          ${!isOpen && !isMobile ? 'justify-center' : ''}
+                                        `}
+                                        title={!isOpen && !isMobile ? item.name : ''}
+                                    >
+                                        <Icon className={`w-5 h-5 flex-shrink-0 ${!isOpen && !isMobile ? 'text-slate-400 group-hover:text-primary-500' : ''}`} />
+                                        {(isOpen || isMobile) && (
+                                            <span className="truncate">{item.name}</span>
+                                        )}
+                                    </NavLink>
+                                );
+                            })}
+                        </>
+                    )}
+
+                    {/* Sessão Psicologia */}
+                    {isPsicologo && (
+                        <>
+                            <div className="pt-4 pb-2">
+                                <p className={`px-3 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider ${!isOpen && !isMobile ? 'text-center' : ''}`}>
+                                    {(isOpen || isMobile) ? 'Psicologia' : '...'}
+                                </p>
+                            </div>
+                            {navItems.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <NavLink
+                                        key={item.path}
+                                        to={item.path}
+                                        className={({ isActive }) => `
+                                          flex items-center gap-3 px-3 py-3 rounded-xl transition-all group
+                                          ${isActive
+                                                ? 'bg-primary-50 dark:bg-slate-800 text-primary-700 dark:text-primary-400 font-medium'
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
+                                            }
+                                          ${!isOpen && !isMobile ? 'justify-center' : ''}
+                                        `}
+                                        title={!isOpen && !isMobile ? item.name : ''}
+                                    >
+                                        <Icon className={`w-5 h-5 flex-shrink-0 ${!isOpen && !isMobile ? 'text-slate-400 group-hover:text-primary-500' : ''}`} />
+                                        {(isOpen || isMobile) && (
+                                            <span className="truncate">{item.name}</span>
+                                        )}
+                                    </NavLink>
+                                );
+                            })}
+                        </>
+                    )}
+
+                    {/* Sessão Paciente */}
+                    {isPaciente && (
+                        <>
+                            <div className="pt-4 pb-2">
+                                <p className={`px-3 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider ${!isOpen && !isMobile ? 'text-center' : ''}`}>
+                                    {(isOpen || isMobile) ? 'Paciente' : '...'}
+                                </p>
+                            </div>
+                            {userItems.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <NavLink
+                                        key={item.path}
+                                        to={item.path}
+                                        className={({ isActive }) => `
+                                          flex items-center gap-3 px-3 py-3 rounded-xl transition-all group
+                                          ${isActive
+                                                ? 'bg-primary-50 dark:bg-slate-800 text-primary-700 dark:text-primary-400 font-medium'
+                                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
+                                            }
+                                          ${!isOpen && !isMobile ? 'justify-center' : ''}
+                                        `}
+                                        title={!isOpen && !isMobile ? item.name : ''}
+                                    >
+                                        <Icon className={`w-5 h-5 flex-shrink-0 ${!isOpen && !isMobile ? 'text-slate-400 group-hover:text-primary-500' : ''}`} />
+                                        {(isOpen || isMobile) && (
+                                            <span className="truncate">{item.name}</span>
+                                        )}
+                                    </NavLink>
+                                );
+                            })}
+                        </>
+                    )}
                 </nav>
             </aside>
         </>
