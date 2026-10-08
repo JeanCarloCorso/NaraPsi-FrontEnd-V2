@@ -29,4 +29,5 @@ export const prontuarioService = {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
     downloadAnexo: (anexoId: number) => api.get(`/anexo/${anexoId}/download-anexo`, { responseType: 'blob' }),
+    deleteAnexo: (anexoId: number) => api.delete(`/anexo/${anexoId}/delete`),
 };

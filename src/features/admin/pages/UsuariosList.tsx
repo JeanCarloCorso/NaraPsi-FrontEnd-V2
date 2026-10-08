@@ -181,14 +181,17 @@ export default function UsuariosList() {
             </div>
 
             {/* Modal de Edição */}
-            <ModalEditarUsuario
-                usuario={selectedUser}
-                perfisDisponiveis={perfis}
-                isOpen={!!selectedUser}
-                onClose={() => setSelectedUser(null)}
-                onSave={atualizarUsuario}
-                isSaving={isSaving}
-            />
+            {selectedUser && (
+                <ModalEditarUsuario
+                    key={selectedUser.id_usuario}
+                    usuario={selectedUser}
+                    perfisDisponiveis={perfis}
+                    isOpen
+                    onClose={() => setSelectedUser(null)}
+                    onSave={atualizarUsuario}
+                    isSaving={isSaving}
+                />
+            )}
 
             {/* Sistema de Notificação (Toast) */}
             {notification.visible && (

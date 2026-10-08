@@ -1,5 +1,5 @@
 import { X, CheckCircle, Loader2, ShieldCheck, UserCircle2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { UsuarioAdmin, PerfilResponse, UpdateUsuarioRequest } from '../types';
 
 interface ModalEditarUsuarioProps {
@@ -20,24 +20,12 @@ export default function ModalEditarUsuario({
     isSaving
 }: ModalEditarUsuarioProps) {
 
-    const [loginAtivo, setLoginAtivo] = useState(false);
-    const [perfisSelecionados, setPerfisSelecionados] = useState<number[]>([]);
-
-    useEffect(() => {
-        if (usuario && isOpen) {
-            setLoginAtivo(usuario.login_ativo);
-
-            // Map the string representation of roles to their IDs based on the available profiles
-            const userProfileIds = usuario.perfis
-                .map(pName => {
-                    const found = perfisDisponiveis.find(p => p.nome === pName);
-                    return found ? found.id_perfil : null;
-                })
-                .filter((id): id is number => id !== null);
-
-            setPerfisSelecionados(userProfileIds);
-        }
-    }, [usuario, isOpen, perfisDisponiveis]);
+    const [loginAtivo, setLoginAtivo] = useState(usuario?.login_ativo ?? false);
+    const [perfisSelecionados, setPerfisSelecionados] = useState<number[]>(() =>
+        usuario?.perfis
+            .map((profileName) => perfisDisponiveis.find((profile) => profile.nome === profileName)?.id_perfil)
+            .filter((id): id is number => id !== undefined) ?? []
+    );
 
     if (!isOpen || !usuario) return null;
 
@@ -61,6 +49,9 @@ export default function ModalEditarUsuario({
 
     return (
         <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="editar-usuario-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => !isSaving && onClose()}
         >
@@ -71,7 +62,7 @@ export default function ModalEditarUsuario({
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
                     <div>
-                        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <h3 id="editar-usuario-title" className="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                             <UserCircle2 className="w-5 h-5 text-primary-500" />
                             Editar Usuário
                         </h3>
@@ -80,6 +71,7 @@ export default function ModalEditarUsuario({
                         </p>
                     </div>
                     <button
+                        aria-label="Fechar edição do usuário"
                         onClick={onClose}
                         disabled={isSaving}
                         className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"

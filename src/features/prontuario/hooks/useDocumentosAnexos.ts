@@ -16,6 +16,7 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
     const [isLoadingAnexos, setIsLoadingAnexos] = useState(false);
     const [anexosFetched, setAnexosFetched] = useState(false);
     const [isDownloadingAnexo, setIsDownloadingAnexo] = useState<number | null>(null);
+    const [isDeletingAnexo, setIsDeletingAnexo] = useState<number | null>(null);
 
     // Upload
     const [showModalUploadAnexo, setShowModalUploadAnexo] = useState(false);
@@ -125,6 +126,20 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
         }
     };
 
+    const handleDeleteAnexo = async (anexo: Anexo) => {
+        setIsDeletingAnexo(anexo.id_anexo);
+        try {
+            await prontuarioService.deleteAnexo(anexo.id_anexo);
+            setAnexos((current) => current.filter((item) => item.id_anexo !== anexo.id_anexo));
+            showToast('Anexo excluído com sucesso!');
+        } catch (err) {
+            console.error('Erro ao excluir anexo:', err);
+            showToast('Não foi possível excluir o anexo.', 'error');
+        } finally {
+            setIsDeletingAnexo(null);
+        }
+    };
+
     return {
         // Documentos
         documentos,
@@ -143,6 +158,8 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
         fetchAnexos,
         isDownloadingAnexo,
         handleDownloadAnexo,
+        isDeletingAnexo,
+        handleDeleteAnexo,
 
         // Upload
         showModalUploadAnexo,

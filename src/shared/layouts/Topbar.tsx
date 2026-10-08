@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Menu, User, UserCircle, LogOut, Sun, Moon } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { authService } from '@features/auth/services/authService';
+import { getProfiles } from '@shared/auth/session';
 
 interface TopbarProps {
     toggleSidebar: () => void;
@@ -32,18 +34,10 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
 
     const nome = localStorage.getItem('nome') || 'Usuário';
     let perfilName = 'Visitante';
-    const perfisList: string[] = [];
-    try {
-        const rawPerfis = JSON.parse(localStorage.getItem('perfis') || '[]');
-        if (rawPerfis.length > 0) {
-            perfilName = typeof rawPerfis[0] === 'string' ? rawPerfis[0] : rawPerfis[0].Perfil;
-        }
-        rawPerfis.forEach((p: any) => perfisList.push(typeof p === 'string' ? p : p.Perfil));
-    } catch (e) {
-        // ignore
-    }
+    const perfisList = getProfiles();
+    if (perfisList.length > 0) perfilName = perfisList[0];
 
-    const canEditProfile = perfisList.includes('Administrador') || perfisList.includes('Psicologo');
+    const canEditProfile = perfisList.includes('Psicologo');
 
     // Get current page name based on route
     const getPageName = () => {
@@ -70,8 +64,13 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleLogout = () => {
-        localStorage.clear();
+    const handleLogout = async () => {
+        try {
+            await authService.logout();
+        } catch {
+            // O logout local deve funcionar mesmo se a API estiver indisponível.
+        }
+        authService.clearSession();
         navigate('/');
     };
 
@@ -79,6 +78,7 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
         <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between sticky top-0 z-10 transition-all">
             <div className="flex items-center gap-4">
                 <button
+                    aria-label="Abrir ou fechar menu lateral"
                     onClick={toggleSidebar}
                     className="p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                 >
@@ -93,6 +93,7 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
                 {/* User Dropdown */}
                 <div className="relative" ref={dropdownRef}>
                     <button
+                        aria-label="Abrir menu do usuário"
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         className="flex items-center gap-3 p-1.5 pr-3 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                     >

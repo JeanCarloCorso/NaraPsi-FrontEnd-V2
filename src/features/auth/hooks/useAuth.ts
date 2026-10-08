@@ -14,7 +14,7 @@ export function useAuth() {
         setError('');
 
         const sanitizedUsername = sanitizeText(usernameInput);
-        const trimmedPassword = passwordInput.trim();
+        const password = passwordInput;
 
         if (!sanitizedUsername) {
             setFieldErrors(prev => ({ ...prev, username: 'Informe o usuário' }));
@@ -22,7 +22,7 @@ export function useAuth() {
             return false;
         }
 
-        if (!trimmedPassword) {
+        if (!password) {
             setFieldErrors(prev => ({ ...prev, password: 'Informe a senha' }));
             setIsLoading(false);
             return false;
@@ -31,7 +31,7 @@ export function useAuth() {
         try {
             const data = await authService.login({
                 username: sanitizedUsername,
-                password: trimmedPassword
+                password
             });
 
             authService.saveSession(data);

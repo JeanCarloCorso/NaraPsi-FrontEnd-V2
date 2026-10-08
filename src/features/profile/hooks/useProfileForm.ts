@@ -69,7 +69,7 @@ export function useProfileForm() {
                     telefones,
                     enderecos
                 });
-            } catch (err: any) {
+            } catch {
                 setMessage({ type: 'error', text: 'Erro ao carregar os dados do perfil.' });
             } finally {
                 setIsLoading(false);

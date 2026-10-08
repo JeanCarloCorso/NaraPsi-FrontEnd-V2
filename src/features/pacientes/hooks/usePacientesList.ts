@@ -7,6 +7,7 @@ export function usePacientesList() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchPacientes = useCallback(async () => {
         setIsLoading(true);
@@ -36,6 +37,17 @@ export function usePacientesList() {
         return pacientes;
     }, [pacientes, searchTerm]);
 
+    const deletePaciente = async (id: number) => {
+        setIsDeleting(true);
+        try {
+            await pacientesService.excluirPaciente(id);
+            setPacientes((current) => current.filter((paciente) => paciente.id !== id));
+            return true;
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return {
         pacientes,
         filteredPacientes,
@@ -43,6 +55,8 @@ export function usePacientesList() {
         error,
         searchTerm,
         setSearchTerm,
-        fetchPacientes
+        fetchPacientes,
+        isDeleting,
+        deletePaciente
     };
 }

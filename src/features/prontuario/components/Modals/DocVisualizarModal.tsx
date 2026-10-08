@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, Calendar, Plus, Loader2, Download } from 'lucide-react';
 import type { Documento } from '@features/prontuario/types';
+import { sanitizeHtml } from '@shared/utils/sanitizeHtml';
 
 interface DocVisualizarModalProps {
     documento: Documento | null;
@@ -19,6 +20,9 @@ export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
 
     return (
         <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="documento-modal-title"
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={onClose}
         >
@@ -33,7 +37,7 @@ export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
                             <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{documento.nome}</h3>
+                            <h3 id="documento-modal-title" className="text-lg font-semibold text-slate-800 dark:text-slate-100">{documento.nome}</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                                 <Calendar className="w-3.5 h-3.5" />
                                 Gerado em {new Date(documento.data_criacao).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
@@ -41,6 +45,7 @@ export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
                         </div>
                     </div>
                     <button
+                        aria-label="Fechar visualização do documento"
                         onClick={onClose}
                         className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                     >
@@ -58,7 +63,7 @@ export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
                             prose-strong:text-slate-900 dark:prose-strong:text-white
                             prose-span:text-slate-900 dark:prose-span:text-slate-100
                         "
-                        dangerouslySetInnerHTML={{ __html: documento.conteudo }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(documento.conteudo) }}
                     />
                 </div>
 

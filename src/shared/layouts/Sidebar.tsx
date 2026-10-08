@@ -8,6 +8,7 @@ import {
     Settings,
     UserPlus
 } from 'lucide-react';
+import { getProfiles } from '@shared/auth/session';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -16,13 +17,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
-    let perfisList: string[] = [];
-    try {
-        const rawPerfis = JSON.parse(localStorage.getItem('perfis') || '[]');
-        perfisList = rawPerfis.map((p: any) => typeof p === 'string' ? p : p.Perfil);
-    } catch {
-        perfisList = [];
-    }
+    const perfisList = getProfiles();
     const isAdmin = perfisList.includes('Administrador');
     const isPsicologo = perfisList.includes('Psicologo');
     const isPaciente = perfisList.includes('Usuario') || perfisList.includes('Paciente');
@@ -70,7 +65,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
                         )}
                     </div>
                     {isMobile && (
-                        <button onClick={() => setIsOpen(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400">
+                        <button aria-label="Fechar menu" onClick={() => setIsOpen(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400">
                             <X className="w-5 h-5" />
                         </button>
                     )}

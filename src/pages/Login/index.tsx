@@ -33,7 +33,7 @@ export default function Login() {
                     <form onSubmit={handleLogin} className="space-y-6">
 
                         {error && (
-                            <div className="bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 p-3 rounded-xl text-sm border border-red-100 dark:border-red-500/20 flex items-center">
+                            <div role="alert" aria-live="polite" className="bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 p-3 rounded-xl text-sm border border-red-100 dark:border-red-500/20 flex items-center">
                                 {error}
                             </div>
                         )}
@@ -41,7 +41,7 @@ export default function Login() {
                         <div className="space-y-4">
                             {/* Username Field */}
                             <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
+                                <label htmlFor="login-username" className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
                                     Usuário
                                 </label>
                                 <div className="relative group">
@@ -49,6 +49,9 @@ export default function Login() {
                                         <User className="h-5 w-5 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
                                     </div>
                                     <input
+                                        id="login-username"
+                                        name="username"
+                                        autoComplete="username"
                                         type="text"
                                         value={username}
                                         onChange={(e) => {
@@ -67,7 +70,7 @@ export default function Login() {
 
                             {/* Password Field */}
                             <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
+                                <label htmlFor="login-password" className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
                                     Senha
                                 </label>
                                 <div className="relative group">
@@ -75,6 +78,9 @@ export default function Login() {
                                         <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
                                     </div>
                                     <input
+                                        id="login-password"
+                                        name="password"
+                                        autoComplete="current-password"
                                         type="password"
                                         value={password}
                                         onChange={(e) => {

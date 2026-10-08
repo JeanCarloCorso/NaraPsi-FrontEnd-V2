@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Plus, UserCircle2, Calendar, Activity, Loader2, AlertCircle, Trash2, Phone, Paperclip, CheckCircle, FileEdit } from 'lucide-react';
 import { maskCPF, maskRG, maskPhone } from '@shared/utils/masks';
 import { usePacientesList } from '@features/pacientes/hooks/usePacientesList';
 import { usePacienteForm } from '@features/pacientes/hooks/usePacienteForm';
+import type { Paciente } from '@features/pacientes/types';
+import ConfirmDialog from '@shared/components/ConfirmDialog';
 
 export default function Pacientes() {
     const navigate = useNavigate();
+    const [pacienteExcluir, setPacienteExcluir] = useState<Paciente | null>(null);
 
     const {
         filteredPacientes,
@@ -13,7 +17,9 @@ export default function Pacientes() {
         error,
         searchTerm,
         setSearchTerm,
-        fetchPacientes
+        fetchPacientes,
+        isDeleting,
+        deletePaciente
     } = usePacientesList();
 
     const {
@@ -37,6 +43,17 @@ export default function Pacientes() {
         updateFamiliar,
         handleSavePaciente
     } = usePacienteForm(fetchPacientes);
+
+    const handleDeletePaciente = async () => {
+        if (!pacienteExcluir) return;
+        try {
+            await deletePaciente(pacienteExcluir.id);
+            setNotification({ visible: true, type: 'success', message: 'Paciente desativado com sucesso.' });
+            setPacienteExcluir(null);
+        } catch {
+            setNotification({ visible: true, type: 'error', message: 'Não foi possível desativar o paciente.' });
+        }
+    };
 
 
 
@@ -157,10 +174,15 @@ export default function Pacientes() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 transition-colors px-3 py-1 flex items-center gap-1 ml-auto">
+                                            <div className="flex items-center justify-end gap-1">
+                                            <button onClick={(event) => { event.stopPropagation(); navigate(`/pacientes/${paciente.id}`); }} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 transition-colors px-3 py-1 flex items-center gap-1">
                                                 <Activity className="w-4 h-4" />
                                                 Prontuário
                                             </button>
+                                            <button aria-label={`Desativar ${paciente.nome}`} title="Desativar paciente" onClick={(event) => { event.stopPropagation(); setPacienteExcluir(paciente); }} className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -623,6 +645,15 @@ export default function Pacientes() {
                     </div>
                 </div>
             )}
+            <ConfirmDialog
+                open={!!pacienteExcluir}
+                title="Desativar paciente?"
+                description={`O paciente ${pacienteExcluir?.nome ?? ''} deixará de aparecer na lista ativa. Os dados clínicos serão preservados.`}
+                confirmLabel="Desativar"
+                isLoading={isDeleting}
+                onCancel={() => setPacienteExcluir(null)}
+                onConfirm={handleDeletePaciente}
+            />
         </div>
     );
 }

@@ -9,5 +9,9 @@ export const pacientesService = {
 
     async criarPaciente(data: PacienteFormData): Promise<void> {
         await api.post('/pacientes', data);
+    },
+
+    async excluirPaciente(id: number): Promise<void> {
+        await api.delete(`/paciente/${id}`);
     }
 };

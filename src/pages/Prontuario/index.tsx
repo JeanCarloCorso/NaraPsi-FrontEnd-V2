@@ -23,11 +23,14 @@ import { UploadAnexoModal } from '@features/prontuario/components/Modals/UploadA
 import { DocVisualizarModal } from '@features/prontuario/components/Modals/DocVisualizarModal';
 import { Toast } from '@features/prontuario/components/Modals/Toast';
 import { ChatNaraIA } from '@features/prontuario/components/ChatNaraIA';
-import type { PacienteFormData, Anamnese } from '@features/prontuario/types';
+import type { PacienteFormData, Anamnese, Anexo } from '@features/prontuario/types';
+import { sanitizeHtml } from '@shared/utils/sanitizeHtml';
+import ConfirmDialog from '@shared/components/ConfirmDialog';
 
 export default function Prontuario() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const [anexoExcluir, setAnexoExcluir] = useState<Anexo | null>(null);
 
     // Estado local para controle das seções (expansível/colapsável)
     const [sectionsOpen, setSectionsOpen] = useState({
@@ -109,6 +112,7 @@ export default function Prontuario() {
         isLoadingAnexos,
         isDownloadingDoc,
         isDownloadingAnexo,
+        isDeletingAnexo,
         isUploadingAnexo,
         showModalUploadAnexo,
         setShowModalUploadAnexo,
@@ -120,6 +124,7 @@ export default function Prontuario() {
         setUploadAnexoDescricao,
         handleDownloadDocumento,
         handleDownloadAnexo,
+        handleDeleteAnexo,
         handleUploadAnexo,
         fetchDocumentos,
         fetchAnexos
@@ -198,6 +203,8 @@ export default function Prontuario() {
                         onDownload={handleDownloadAnexo}
                         isDownloadingAnexo={isDownloadingAnexo}
                         onUploadClick={() => setShowModalUploadAnexo(true)}
+                        onDelete={setAnexoExcluir}
+                        isDeletingAnexo={isDeletingAnexo}
                     />
                 </div>
             </div>
@@ -273,11 +280,11 @@ export default function Prontuario() {
 
             {/* Modal de visualização de relato simplificado */}
             {sessaoVisualizar && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSessaoVisualizar(null)}>
+                <div role="dialog" aria-modal="true" aria-labelledby="sessao-view-title" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSessaoVisualizar(null)}>
                     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-3xl max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
                             <div>
-                                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+                                <h3 id="sessao-view-title" className="text-lg font-semibold text-slate-800 dark:text-slate-100">
                                     Relato — Sessão #{sessaoVisualizar.id_sessao}
                                 </h3>
                                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
@@ -287,6 +294,7 @@ export default function Prontuario() {
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
+                                    aria-label="Fechar visualização da sessão"
                                     onClick={() => handleDownload(sessaoVisualizar)}
                                     disabled={isDownloading === sessaoVisualizar.id_sessao}
                                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 bg-slate-50 dark:bg-slate-800 hover:bg-primary-50 dark:hover:bg-primary-500/10 border border-slate-200 dark:border-slate-700 rounded-lg transition-all disabled:opacity-50"
@@ -306,7 +314,7 @@ export default function Prontuario() {
                             </div>
                         </div>
                         <div className="overflow-y-auto flex-1 px-6 py-5">
-                            <div className="prose prose-slate dark:prose-invert max-w-none text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: sessaoVisualizar.conteudo }} />
+                            <div className="prose prose-slate dark:prose-invert max-w-none text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: sanitizeHtml(sessaoVisualizar.conteudo) }} />
                         </div>
                     </div>
                 </div>
@@ -318,6 +326,19 @@ export default function Prontuario() {
             {paciente?.id_paciente && (
                 <ChatNaraIA pacienteId={paciente.id_paciente.toString()} />
             )}
+            <ConfirmDialog
+                open={!!anexoExcluir}
+                title="Excluir anexo?"
+                description={`O arquivo ${anexoExcluir?.nome_arquivo ?? ''} será removido permanentemente.`}
+                confirmLabel="Excluir"
+                isLoading={isDeletingAnexo !== null}
+                onCancel={() => setAnexoExcluir(null)}
+                onConfirm={async () => {
+                    if (!anexoExcluir) return;
+                    await handleDeleteAnexo(anexoExcluir);
+                    setAnexoExcluir(null);
+                }}
+            />
         </div>
     );
 }

@@ -1,4 +1,5 @@
 import api from '@shared/api/apiClient';
+import { clearSession } from '@shared/auth/session';
 import type { LoginResponse, LoginCredentials } from '../types';
 
 export const authService = {
@@ -25,9 +26,11 @@ export const authService = {
         localStorage.setItem('perfis', JSON.stringify(perfisNames));
     },
 
+    async logout() {
+        await api.post('/logout');
+    },
+
     clearSession() {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('nome');
-        localStorage.removeItem('perfis');
+        clearSession();
     }
 };

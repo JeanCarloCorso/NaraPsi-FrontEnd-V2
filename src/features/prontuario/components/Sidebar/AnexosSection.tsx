@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronRight, Paperclip, Plus, Loader2, FileText, Image as ImageIcon, Download } from 'lucide-react';
+import { ChevronDown, ChevronRight, Paperclip, Plus, Loader2, FileText, Image as ImageIcon, Download, Trash2 } from 'lucide-react';
 import type { Anexo } from '@features/prontuario/types';
 
 interface AnexosSectionProps {
@@ -10,6 +10,8 @@ interface AnexosSectionProps {
     onDownload: (anexo: Anexo) => void;
     isDownloadingAnexo: number | null;
     onUploadClick: () => void;
+    onDelete: (anexo: Anexo) => void;
+    isDeletingAnexo: number | null;
 }
 
 export const AnexosSection: React.FC<AnexosSectionProps> = ({
@@ -19,7 +21,9 @@ export const AnexosSection: React.FC<AnexosSectionProps> = ({
     anexos,
     onDownload,
     isDownloadingAnexo,
-    onUploadClick
+    onUploadClick,
+    onDelete,
+    isDeletingAnexo
 }) => {
     return (
         <section className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-all overflow-hidden">
@@ -96,6 +100,15 @@ export const AnexosSection: React.FC<AnexosSectionProps> = ({
                                             ) : (
                                                 <Download className="w-4 h-4" />
                                             )}
+                                        </button>
+                                        <button
+                                            onClick={() => onDelete(anexo)}
+                                            disabled={isDeletingAnexo === anexo.id_anexo}
+                                            className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                                            title="Excluir arquivo"
+                                            aria-label={`Excluir ${anexo.nome_arquivo}`}
+                                        >
+                                            {isDeletingAnexo === anexo.id_anexo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                         </button>
                                     </div>
                                 </div>
