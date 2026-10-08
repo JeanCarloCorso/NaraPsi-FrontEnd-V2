@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 import { prontuarioService } from '@features/prontuario/services/prontuarioService';
 import { sanitizeText } from '@shared/utils/validators';
-import type { Documento, Anexo } from '@features/prontuario/types';
+import type { Documento, DocumentoApiError, Anexo, TipoDocumento, VariavelDocumento } from '@features/prontuario/types';
+
+const isDocumentoApiError = (value: Documento | DocumentoApiError): value is DocumentoApiError => 'erro' in value;
 
 export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 'success' | 'error') => void) {
     // Documentos
@@ -10,6 +12,19 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
     const [documentosFetched, setDocumentosFetched] = useState(false);
     const [isDownloadingDoc, setIsDownloadingDoc] = useState<number | null>(null);
     const [docVisualizar, setDocVisualizar] = useState<Documento | null>(null);
+    const [showModalGerarDocumento, setShowModalGerarDocumento] = useState(false);
+    const [tiposDocumentos, setTiposDocumentos] = useState<TipoDocumento[]>([]);
+    const [tipoDocumentoSelecionado, setTipoDocumentoSelecionado] = useState<number | null>(null);
+    const [variaveisDocumento, setVariaveisDocumento] = useState<VariavelDocumento[]>([]);
+    const [valoresDocumento, setValoresDocumento] = useState<Record<string, string>>({});
+    const [documentoError, setDocumentoError] = useState('');
+    const [isLoadingTipos, setIsLoadingTipos] = useState(false);
+    const [isLoadingVariaveis, setIsLoadingVariaveis] = useState(false);
+    const [isGeneratingDocumento, setIsGeneratingDocumento] = useState(false);
+    const [isEditingDocumento, setIsEditingDocumento] = useState(false);
+    const [conteudoDocumento, setConteudoDocumento] = useState('');
+    const [isSavingDocumento, setIsSavingDocumento] = useState(false);
+    const [isSigningDocumento, setIsSigningDocumento] = useState(false);
 
     // Anexos
     const [anexos, setAnexos] = useState<Anexo[]>([]);
@@ -76,6 +91,120 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
             showToast('Erro ao baixar o documento.', 'error');
         } finally {
             setIsDownloadingDoc(null);
+        }
+    };
+
+    const handleOpenGerarDocumento = async () => {
+        setShowModalGerarDocumento(true);
+        setDocumentoError('');
+        setTipoDocumentoSelecionado(null);
+        setVariaveisDocumento([]);
+        setValoresDocumento({});
+        if (tiposDocumentos.length > 0) return;
+
+        setIsLoadingTipos(true);
+        try {
+            const response = await prontuarioService.getTiposDocumentos();
+            setTiposDocumentos(response.data);
+        } catch (err) {
+            console.error('Erro ao carregar tipos de documento:', err);
+            setDocumentoError('Não foi possível carregar os tipos de documento.');
+        } finally {
+            setIsLoadingTipos(false);
+        }
+    };
+
+    const handleSelectTipoDocumento = async (tipoId: number) => {
+        setTipoDocumentoSelecionado(tipoId || null);
+        setVariaveisDocumento([]);
+        setValoresDocumento({});
+        setDocumentoError('');
+        if (!tipoId) return;
+
+        setIsLoadingVariaveis(true);
+        try {
+            const response = await prontuarioService.getVariaveisDocumento(tipoId);
+            setVariaveisDocumento(response.data);
+            setValoresDocumento(Object.fromEntries(response.data.map((variavel) => [variavel.nome_variavel, ''])));
+        } catch (err: any) {
+            console.error('Erro ao carregar variáveis do documento:', err);
+            setDocumentoError(err.response?.data?.detail || 'Este tipo de documento ainda não possui um modelo configurado.');
+        } finally {
+            setIsLoadingVariaveis(false);
+        }
+    };
+
+    const handleGenerateDocumento = async () => {
+        if (!tipoDocumentoSelecionado) return;
+        const missing = variaveisDocumento.find((variavel) => !valoresDocumento[variavel.nome_variavel]?.trim());
+        if (missing) {
+            setDocumentoError(`Preencha o campo: ${missing.texto_exibido_usuario || missing.nome_variavel}.`);
+            return;
+        }
+
+        setIsGeneratingDocumento(true);
+        setDocumentoError('');
+        try {
+            const payload = Object.fromEntries(Object.entries(valoresDocumento).map(([key, value]) => [key, sanitizeText(value)]));
+            const response = await prontuarioService.gerarDocumento(id, tipoDocumentoSelecionado, payload);
+            if (isDocumentoApiError(response.data)) throw new Error(response.data.detalhes || response.data.erro);
+
+            const documento: Documento = { ...response.data, caminho_arquivo: null, assinaturas: [] };
+            setDocumentos((current) => [documento, ...current]);
+            setDocVisualizar(documento);
+            setConteudoDocumento(documento.conteudo);
+            setShowModalGerarDocumento(false);
+            setDocumentosFetched(true);
+            showToast('Documento gerado com sucesso!');
+        } catch (err: any) {
+            console.error('Erro ao gerar documento:', err);
+            setDocumentoError(err.response?.data?.detail || err.message || 'Não foi possível gerar o documento.');
+        } finally {
+            setIsGeneratingDocumento(false);
+        }
+    };
+
+    const handleStartEditDocumento = (documento: Documento) => {
+        if (documento.assinaturas?.length) {
+            showToast('Documentos enviados para assinatura não podem ser editados.', 'error');
+            return;
+        }
+        setConteudoDocumento(documento.conteudo);
+        setIsEditingDocumento(true);
+    };
+
+    const handleSaveDocumento = async () => {
+        if (!docVisualizar || !conteudoDocumento.trim()) return;
+        setIsSavingDocumento(true);
+        try {
+            const response = await prontuarioService.editarDocumento(id, docVisualizar.id_documento, conteudoDocumento);
+            if (isDocumentoApiError(response.data)) throw new Error(response.data.detalhes || response.data.erro);
+            const updated: Documento = { ...docVisualizar, ...response.data };
+            setDocumentos((current) => current.map((doc) => doc.id_documento === updated.id_documento ? updated : doc));
+            setDocVisualizar(updated);
+            setIsEditingDocumento(false);
+            showToast('Documento atualizado com sucesso!');
+        } catch (err: any) {
+            console.error('Erro ao editar documento:', err);
+            showToast(err.response?.data?.detail || err.message || 'Não foi possível editar o documento.', 'error');
+        } finally {
+            setIsSavingDocumento(false);
+        }
+    };
+
+    const handleSignDocumento = async () => {
+        if (!docVisualizar || docVisualizar.assinaturas?.length) return;
+        setIsSigningDocumento(true);
+        try {
+            await prontuarioService.assinarDocumento(docVisualizar.id_documento);
+            await fetchDocumentos();
+            setDocVisualizar(null);
+            showToast('Documento enviado para assinatura com sucesso!');
+        } catch (err: any) {
+            console.error('Erro ao enviar documento para assinatura:', err);
+            showToast(err.response?.data?.detail || 'Não foi possível enviar o documento para assinatura.', 'error');
+        } finally {
+            setIsSigningDocumento(false);
         }
     };
 
@@ -150,6 +279,29 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
         handleDownloadDocumento,
         documentoVisualizar: docVisualizar,
         setDocumentoVisualizar: setDocVisualizar,
+        showModalGerarDocumento,
+        setShowModalGerarDocumento,
+        tiposDocumentos,
+        tipoDocumentoSelecionado,
+        variaveisDocumento,
+        valoresDocumento,
+        setValoresDocumento,
+        documentoError,
+        isLoadingTipos,
+        isLoadingVariaveis,
+        isGeneratingDocumento,
+        handleOpenGerarDocumento,
+        handleSelectTipoDocumento,
+        handleGenerateDocumento,
+        isEditingDocumento,
+        setIsEditingDocumento,
+        conteudoDocumento,
+        setConteudoDocumento,
+        isSavingDocumento,
+        isSigningDocumento,
+        handleStartEditDocumento,
+        handleSaveDocumento,
+        handleSignDocumento,
 
         // Anexos
         anexos,

@@ -1,5 +1,5 @@
 import api from '@shared/api/apiClient';
-import type { Anamnese, PacienteFormData } from '@features/prontuario/types';
+import type { Anamnese, AssinaturaDocumentoResponse, Documento, DocumentoApiError, PacienteFormData, TipoDocumento, VariavelDocumento } from '@features/prontuario/types';
 
 export const prontuarioService = {
     // Paciente
@@ -22,6 +22,14 @@ export const prontuarioService = {
     // Documentos
     getDocumentos: (id: string) => api.get(`/paciente/${id}/documentos`),
     downloadDocumento: (docId: number) => api.get(`/documento/${docId}/download`, { responseType: 'blob' }),
+    getTiposDocumentos: () => api.get<TipoDocumento[]>('/tipos-documentos'),
+    getVariaveisDocumento: (tipoId: number) => api.get<VariavelDocumento[]>(`/tipos-documentos/${tipoId}/variaveis`),
+    gerarDocumento: (pacienteId: string, tipoId: number, variaveis: Record<string, string>) =>
+        api.post<Documento | DocumentoApiError>(`/paciente/${pacienteId}/preencher-template/${tipoId}`, variaveis),
+    editarDocumento: (pacienteId: string, documentoId: number, conteudo: string) =>
+        api.post<Documento | DocumentoApiError>(`/paciente/${pacienteId}/documento/${documentoId}/editar`, { conteudo }),
+    assinarDocumento: (documentoId: number) =>
+        api.post<AssinaturaDocumentoResponse>(`/assinar-doc/${documentoId}`),
 
     // Anexos
     getAnexos: (id: string) => api.get(`/paciente/${id}/anexos`),

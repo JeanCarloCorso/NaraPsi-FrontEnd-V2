@@ -10,6 +10,7 @@ interface DocumentosSectionProps {
     onView: (doc: Documento) => void;
     onDownload: (doc: Documento) => void;
     isDownloadingDoc: number | null;
+    onNew: () => void;
 }
 
 export const DocumentosSection: React.FC<DocumentosSectionProps> = ({
@@ -19,7 +20,8 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({
     documentos,
     onView,
     onDownload,
-    isDownloadingDoc
+    isDownloadingDoc,
+    onNew
 }) => {
     return (
         <section className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-all overflow-hidden">
@@ -29,7 +31,7 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({
                     <FileEdit className="w-5 h-5 text-indigo-500" />
                     <h2 className="font-semibold text-slate-800 dark:text-slate-100">Documentos</h2>
                 </button>
-                <button className="p-1.5 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg hover:bg-slate-50 dark:hover:bg-primary-500/10 transition-colors z-10 relative">
+                <button onClick={(event) => { event.stopPropagation(); onNew(); }} aria-label="Gerar novo documento" title="Gerar documento" className="p-1.5 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 rounded-lg hover:bg-slate-50 dark:hover:bg-primary-500/10 transition-colors z-10 relative">
                     <Plus className="w-5 h-5" />
                 </button>
             </div>
@@ -69,14 +71,18 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({
                                                     Assinado
                                                 </span>
                                             )}
+                                            {doc.assinaturas?.length > 0 && !doc.assinaturas.every(s => s.status === 'signed') && (
+                                                <span className="rounded-full border border-amber-100 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-tighter text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400">Aguardando assinatura</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
+                                <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 ml-2">
                                     <button
                                         onClick={() => onView(doc)}
                                         className="p-1.5 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-colors shadow-sm"
                                         title="Visualizar documento"
+                                        aria-label={`Visualizar ${doc.nome}`}
                                     >
                                         <Eye className="w-4 h-4" />
                                     </button>
@@ -85,6 +91,7 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({
                                         disabled={isDownloadingDoc === doc.id_documento}
                                         className="p-1.5 text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-colors shadow-sm disabled:opacity-50"
                                         title="Baixar PDF"
+                                        aria-label={`Baixar ${doc.nome}`}
                                     >
                                         {isDownloadingDoc === doc.id_documento ? (
                                             <Loader2 className="w-4 h-4 animate-spin" />

@@ -71,6 +71,27 @@ export interface Documento {
     }[];
 }
 
+export interface TipoDocumento {
+    id_tipo_documento: number;
+    nome: string;
+    descricao: string;
+}
+
+export interface VariavelDocumento {
+    nome_variavel: string;
+    texto_exibido_usuario: string;
+}
+
+export interface DocumentoApiError {
+    erro: string;
+    detalhes?: string;
+}
+
+export interface AssinaturaDocumentoResponse {
+    document_key: string;
+    status: string;
+}
+
 export interface Anamnese {
     id_anamneses?: number;
     id_paciente: number;

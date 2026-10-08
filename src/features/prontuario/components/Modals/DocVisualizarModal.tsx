@@ -1,5 +1,6 @@
 import React from 'react';
-import { FileText, Calendar, Plus, Loader2, Download } from 'lucide-react';
+import { FileText, Calendar, Plus, Loader2, Download, Edit3, Save, Send } from 'lucide-react';
+import { Editor } from '@tinymce/tinymce-react';
 import type { Documento } from '@features/prontuario/types';
 import { sanitizeHtml } from '@shared/utils/sanitizeHtml';
 
@@ -8,13 +9,31 @@ interface DocVisualizarModalProps {
     onClose: () => void;
     onDownload: (doc: Documento) => void;
     isDownloading: boolean;
+    isEditing: boolean;
+    conteudo: string;
+    isSaving: boolean;
+    isSigning: boolean;
+    onStartEdit: (doc: Documento) => void;
+    onCancelEdit: () => void;
+    onChangeConteudo: (conteudo: string) => void;
+    onSave: () => void;
+    onSign: () => void;
 }
 
 export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
     documento,
     onClose,
     onDownload,
-    isDownloading
+    isDownloading,
+    isEditing,
+    conteudo,
+    isSaving,
+    isSigning,
+    onStartEdit,
+    onCancelEdit,
+    onChangeConteudo,
+    onSave,
+    onSign,
 }) => {
     if (!documento) return null;
 
@@ -27,7 +46,7 @@ export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
             onClick={onClose}
         >
             <div
-                className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-4xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200"
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-6xl max-h-[94vh] flex flex-col animate-in zoom-in-95 duration-200"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -53,22 +72,74 @@ export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
                     </button>
                 </div>
 
+                {documento.assinaturas?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 border-b border-slate-100 px-6 py-3 dark:border-slate-800">
+                        {documento.assinaturas.map((assinatura, index) => (
+                            <span key={`${assinatura.id_pessoa}-${index}`} className={`rounded-full px-2.5 py-1 text-xs font-semibold ${assinatura.status === 'signed' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'}`}>
+                                {assinatura.tipo_assinatura}: {assinatura.status === 'signed' ? 'assinado' : 'aguardando'}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
                 {/* Conteúdo HTML */}
-                <div className="overflow-y-auto flex-1 p-8 bg-slate-50/30 dark:bg-slate-900/50">
-                    <div
-                        className="max-w-3xl mx-auto bg-white dark:bg-slate-800 p-8 sm:p-12 shadow-sm border border-slate-100 dark:border-slate-700 rounded-xl prose dark:prose-invert prose-slate max-w-none
-                            text-slate-900 dark:text-white
-                            prose-headings:text-slate-900 dark:prose-headings:text-white
-                            prose-p:text-slate-900 dark:prose-p:text-slate-100
-                            prose-strong:text-slate-900 dark:prose-strong:text-white
-                            prose-span:text-slate-900 dark:prose-span:text-slate-100
-                        "
-                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(documento.conteudo) }}
-                    />
+                <div className="min-h-0 flex-1 overflow-auto bg-slate-200 p-3 sm:p-6 dark:bg-slate-950">
+                    {isEditing ? (
+                        <div className="mx-auto min-h-[600px] max-w-[210mm] overflow-hidden border border-slate-300 bg-white shadow-xl">
+                            <Editor
+                                apiKey={import.meta.env.VITE_API_TINY_KEY}
+                                value={conteudo}
+                                onEditorChange={onChangeConteudo}
+                                init={{
+                                    height: 600,
+                                    menubar: false,
+                                    plugins: ['advlist', 'autolink', 'lists', 'link', 'charmap', 'preview', 'searchreplace', 'visualblocks', 'code', 'fullscreen', 'table', 'help', 'wordcount'],
+                                    toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | code',
+                                    content_style: `
+                                        html { background: #e2e8f0; }
+                                        body {
+                                            box-sizing: border-box;
+                                            width: 210mm;
+                                            min-height: 297mm;
+                                            margin: 0 auto;
+                                            padding: 18mm 20mm;
+                                            background: #fff;
+                                            color: #111827;
+                                            font-family: "Times New Roman", Times, serif;
+                                            font-size: 12pt;
+                                            line-height: 1.5;
+                                            box-shadow: 0 12px 30px rgba(15, 23, 42, .18);
+                                        }
+                                        table { max-width: 100%; border-collapse: collapse; }
+                                        img { max-width: 100%; height: auto; }
+                                    `,
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <div className="mx-auto w-fit">
+                            <p className="mb-2 text-center text-xs font-medium text-slate-600 dark:text-slate-400">
+                                Pré-visualização em folha A4
+                            </p>
+                            <article
+                                className="min-h-[297mm] w-[210mm] border border-slate-300 bg-white px-[20mm] py-[18mm] text-[12pt] leading-[1.5] text-slate-950 shadow-xl [&_img]:h-auto [&_img]:max-w-full [&_table]:max-w-full [&_table]:border-collapse"
+                                style={{ fontFamily: '"Times New Roman", Times, serif' }}
+                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(documento.conteudo) }}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}
                 <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 flex flex-col sm:flex-row-reverse gap-3 shrink-0">
+                    {isEditing ? (
+                        <>
+                            <button onClick={onSave} disabled={isSaving || !conteudo.trim()} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary-600 px-6 py-2.5 font-semibold text-white hover:bg-primary-700 disabled:bg-primary-400">
+                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Salvar alterações
+                            </button>
+                            <button onClick={onCancelEdit} disabled={isSaving} className="flex-1 rounded-xl border border-slate-200 bg-white px-6 py-2.5 font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">Cancelar edição</button>
+                        </>
+                    ) : <>
                     <button
                         onClick={() => onDownload(documento)}
                         disabled={isDownloading}
@@ -81,12 +152,21 @@ export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
                         )}
                         Baixar PDF
                     </button>
+                    {documento.assinaturas?.length === 0 && (
+                        <button onClick={onSign} disabled={isSigning} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 font-semibold text-white hover:bg-emerald-700 disabled:bg-emerald-400">
+                            {isSigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Enviar para assinatura
+                        </button>
+                    )}
+                    {documento.assinaturas?.length === 0 && (
+                        <button onClick={() => onStartEdit(documento)} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-2.5 font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"><Edit3 className="h-4 w-4" />Editar</button>
+                    )}
                     <button
                         onClick={onClose}
                         className="flex-1 px-6 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl font-semibold transition-colors"
                     >
                         Fechar
                     </button>
+                    </>}
                 </div>
             </div>
         </div>

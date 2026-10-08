@@ -21,6 +21,7 @@ import { SessaoModal } from '@features/prontuario/components/Modals/SessaoModal'
 import { ConfirmacaoExclusaoModal, ConfirmacaoConclusaoModal } from '@features/prontuario/components/Modals/Confirmacoes';
 import { UploadAnexoModal } from '@features/prontuario/components/Modals/UploadAnexoModal';
 import { DocVisualizarModal } from '@features/prontuario/components/Modals/DocVisualizarModal';
+import { GerarDocumentoModal } from '@features/prontuario/components/Modals/GerarDocumentoModal';
 import { Toast } from '@features/prontuario/components/Modals/Toast';
 import { ChatNaraIA } from '@features/prontuario/components/ChatNaraIA';
 import type { PacienteFormData, Anamnese, Anexo } from '@features/prontuario/types';
@@ -31,6 +32,7 @@ export default function Prontuario() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [anexoExcluir, setAnexoExcluir] = useState<Anexo | null>(null);
+    const [confirmarAssinatura, setConfirmarAssinatura] = useState(false);
 
     // Estado local para controle das seções (expansível/colapsável)
     const [sectionsOpen, setSectionsOpen] = useState({
@@ -128,6 +130,29 @@ export default function Prontuario() {
         handleUploadAnexo,
         fetchDocumentos,
         fetchAnexos
+        ,showModalGerarDocumento,
+        setShowModalGerarDocumento,
+        tiposDocumentos,
+        tipoDocumentoSelecionado,
+        variaveisDocumento,
+        valoresDocumento,
+        setValoresDocumento,
+        documentoError,
+        isLoadingTipos,
+        isLoadingVariaveis,
+        isGeneratingDocumento,
+        handleOpenGerarDocumento,
+        handleSelectTipoDocumento,
+        handleGenerateDocumento,
+        isEditingDocumento,
+        setIsEditingDocumento,
+        conteudoDocumento,
+        setConteudoDocumento,
+        isSavingDocumento,
+        isSigningDocumento,
+        handleStartEditDocumento,
+        handleSaveDocumento,
+        handleSignDocumento
     } = useDocumentosAnexos(id as string, showToast);
 
     const toggleSection = (section: keyof typeof sectionsOpen) => {
@@ -193,6 +218,7 @@ export default function Prontuario() {
                         onView={(doc) => setDocumentoVisualizar(doc)}
                         onDownload={handleDownloadDocumento}
                         isDownloadingDoc={isDownloadingDoc}
+                        onNew={handleOpenGerarDocumento}
                     />
 
                     <AnexosSection
@@ -273,9 +299,34 @@ export default function Prontuario() {
 
             <DocVisualizarModal
                 documento={documentoVisualizar}
-                onClose={() => setDocumentoVisualizar(null)}
+                onClose={() => { setDocumentoVisualizar(null); setIsEditingDocumento(false); }}
                 onDownload={handleDownloadDocumento}
                 isDownloading={isDownloadingDoc !== null}
+                isEditing={isEditingDocumento}
+                conteudo={conteudoDocumento}
+                isSaving={isSavingDocumento}
+                isSigning={isSigningDocumento}
+                onStartEdit={handleStartEditDocumento}
+                onCancelEdit={() => setIsEditingDocumento(false)}
+                onChangeConteudo={setConteudoDocumento}
+                onSave={handleSaveDocumento}
+                onSign={() => setConfirmarAssinatura(true)}
+            />
+
+            <GerarDocumentoModal
+                isOpen={showModalGerarDocumento}
+                tipos={tiposDocumentos}
+                tipoSelecionado={tipoDocumentoSelecionado}
+                variaveis={variaveisDocumento}
+                valores={valoresDocumento}
+                isLoadingTipos={isLoadingTipos}
+                isLoadingVariaveis={isLoadingVariaveis}
+                isGenerating={isGeneratingDocumento}
+                error={documentoError}
+                onSelectTipo={handleSelectTipoDocumento}
+                onChangeValor={(nome, valor) => setValoresDocumento((current) => ({ ...current, [nome]: valor }))}
+                onGenerate={handleGenerateDocumento}
+                onClose={() => setShowModalGerarDocumento(false)}
             />
 
             {/* Modal de visualização de relato simplificado */}
@@ -337,6 +388,18 @@ export default function Prontuario() {
                     if (!anexoExcluir) return;
                     await handleDeleteAnexo(anexoExcluir);
                     setAnexoExcluir(null);
+                }}
+            />
+            <ConfirmDialog
+                open={confirmarAssinatura}
+                title="Enviar documento para assinatura?"
+                description="O documento será enviado aos signatários pela Clicksign e não poderá mais ser editado neste fluxo."
+                confirmLabel="Enviar para assinatura"
+                isLoading={isSigningDocumento}
+                onCancel={() => setConfirmarAssinatura(false)}
+                onConfirm={async () => {
+                    await handleSignDocumento();
+                    setConfirmarAssinatura(false);
                 }}
             />
         </div>
