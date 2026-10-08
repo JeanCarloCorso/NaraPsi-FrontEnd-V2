@@ -141,8 +141,11 @@ export default function Prontuario() {
         isLoadingTipos,
         isLoadingVariaveis,
         isGeneratingDocumento,
+        previewDocumento,
+        setPreviewDocumento,
         handleOpenGerarDocumento,
         handleSelectTipoDocumento,
+        handlePreviewDocumento,
         handleGenerateDocumento,
         isEditingDocumento,
         setIsEditingDocumento,
@@ -150,8 +153,10 @@ export default function Prontuario() {
         setConteudoDocumento,
         isSavingDocumento,
         isSigningDocumento,
+        isFinalizingDocumento,
         handleStartEditDocumento,
         handleSaveDocumento,
+        handleFinalizarDocumento,
         handleSignDocumento
     } = useDocumentosAnexos(id as string, showToast);
 
@@ -306,11 +311,13 @@ export default function Prontuario() {
                 conteudo={conteudoDocumento}
                 isSaving={isSavingDocumento}
                 isSigning={isSigningDocumento}
+                isFinalizing={isFinalizingDocumento}
                 onStartEdit={handleStartEditDocumento}
                 onCancelEdit={() => setIsEditingDocumento(false)}
                 onChangeConteudo={setConteudoDocumento}
                 onSave={handleSaveDocumento}
                 onSign={() => setConfirmarAssinatura(true)}
+                onFinalize={handleFinalizarDocumento}
             />
 
             <GerarDocumentoModal
@@ -322,11 +329,14 @@ export default function Prontuario() {
                 isLoadingTipos={isLoadingTipos}
                 isLoadingVariaveis={isLoadingVariaveis}
                 isGenerating={isGeneratingDocumento}
+                preview={previewDocumento}
                 error={documentoError}
                 onSelectTipo={handleSelectTipoDocumento}
                 onChangeValor={(nome, valor) => setValoresDocumento((current) => ({ ...current, [nome]: valor }))}
+                onPreview={handlePreviewDocumento}
                 onGenerate={handleGenerateDocumento}
-                onClose={() => setShowModalGerarDocumento(false)}
+                onBackToFields={() => setPreviewDocumento('')}
+                onClose={() => { setShowModalGerarDocumento(false); setPreviewDocumento(''); }}
             />
 
             {/* Modal de visualização de relato simplificado */}

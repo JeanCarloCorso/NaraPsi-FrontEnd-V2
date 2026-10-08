@@ -1,5 +1,5 @@
 import api from '@shared/api/apiClient';
-import type { Anamnese, AssinaturaDocumentoResponse, Documento, DocumentoApiError, PacienteFormData, TipoDocumento, VariavelDocumento } from '@features/prontuario/types';
+import type { Anamnese, AssinaturaDocumentoResponse, Documento, DocumentoApiError, PacienteFormData, PreviewDocumento, TipoDocumento, VariavelDocumento } from '@features/prontuario/types';
 
 export const prontuarioService = {
     // Paciente
@@ -26,10 +26,16 @@ export const prontuarioService = {
     getVariaveisDocumento: (tipoId: number) => api.get<VariavelDocumento[]>(`/tipos-documentos/${tipoId}/variaveis`),
     gerarDocumento: (pacienteId: string, tipoId: number, variaveis: Record<string, string>) =>
         api.post<Documento | DocumentoApiError>(`/paciente/${pacienteId}/preencher-template/${tipoId}`, variaveis),
+    previewDocumento: (pacienteId: string, tipoId: number, variaveis: Record<string, string>) =>
+        api.post<PreviewDocumento>(`/paciente/${pacienteId}/documentos/preview/${tipoId}`, { variaveis }),
+    criarRascunhoDocumento: (pacienteId: string, previewToken: string) =>
+        api.post<Documento>(`/paciente/${pacienteId}/documentos/rascunhos`, { preview_token: previewToken }),
     editarDocumento: (pacienteId: string, documentoId: number, conteudo: string) =>
         api.post<Documento | DocumentoApiError>(`/paciente/${pacienteId}/documento/${documentoId}/editar`, { conteudo }),
     assinarDocumento: (documentoId: number) =>
         api.post<AssinaturaDocumentoResponse>(`/assinar-doc/${documentoId}`),
+    finalizarDocumento: (pacienteId: string, documentoId: number) =>
+        api.post<Documento>(`/paciente/${pacienteId}/documento/${documentoId}/finalizar`),
 
     // Anexos
     getAnexos: (id: string) => api.get(`/paciente/${id}/anexos`),

@@ -66,6 +66,12 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({
                                             <span className="text-[10px] text-slate-400 dark:text-slate-500">
                                                 {new Date(doc.data_criacao).toLocaleDateString('pt-BR')}
                                             </span>
+                                            {doc.status === 'RASCUNHO' && (
+                                                <span className="rounded-full border border-sky-100 bg-sky-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-tighter text-sky-600 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-400">Rascunho</span>
+                                            )}
+                                            {doc.status === 'FINALIZADO' && (
+                                                <span className="rounded-full border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-tighter text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">Finalizado</span>
+                                            )}
                                             {doc.assinaturas && doc.assinaturas.some(s => s.status === 'signed') && (
                                                 <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20 uppercase tracking-tighter">
                                                     Assinado

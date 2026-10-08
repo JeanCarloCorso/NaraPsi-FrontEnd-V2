@@ -59,10 +59,13 @@ export interface Documento {
     id_documento: number;
     id_paciente: number;
     id_tipo_documento: number;
+    id_template: number | null;
     nome: string;
+    status: 'RASCUNHO' | 'FINALIZADO' | 'EM_ASSINATURA' | 'ASSINADO' | 'RECUSADO' | 'CANCELADO' | 'FALHA';
     caminho_arquivo: string | null;
     data_criacao: string;
     data_atualizacao: string;
+    data_finalizacao: string | null;
     conteudo: string;
     assinaturas: {
         id_pessoa: number;
@@ -75,11 +78,26 @@ export interface TipoDocumento {
     id_tipo_documento: number;
     nome: string;
     descricao: string;
+    requer_assinatura_psicologo: boolean;
+    requer_assinatura_paciente: boolean;
+    id_template: number;
+    versao_template: number;
 }
 
 export interface VariavelDocumento {
     nome_variavel: string;
     texto_exibido_usuario: string;
+    tipo_input: 'text' | 'textarea' | 'date' | 'select';
+    obrigatorio: boolean;
+    origem: 'MANUAL' | 'CARREGADO_BD' | 'GERADO_IA';
+}
+
+export interface PreviewDocumento {
+    id_tipo_documento: number;
+    id_template: number;
+    versao_template: number;
+    conteudo: string;
+    preview_token: string;
 }
 
 export interface DocumentoApiError {

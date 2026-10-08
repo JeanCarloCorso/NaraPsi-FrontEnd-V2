@@ -21,10 +21,13 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
     const [isLoadingTipos, setIsLoadingTipos] = useState(false);
     const [isLoadingVariaveis, setIsLoadingVariaveis] = useState(false);
     const [isGeneratingDocumento, setIsGeneratingDocumento] = useState(false);
+    const [previewDocumento, setPreviewDocumento] = useState('');
+    const [previewDocumentoToken, setPreviewDocumentoToken] = useState('');
     const [isEditingDocumento, setIsEditingDocumento] = useState(false);
     const [conteudoDocumento, setConteudoDocumento] = useState('');
     const [isSavingDocumento, setIsSavingDocumento] = useState(false);
     const [isSigningDocumento, setIsSigningDocumento] = useState(false);
+    const [isFinalizingDocumento, setIsFinalizingDocumento] = useState(false);
 
     // Anexos
     const [anexos, setAnexos] = useState<Anexo[]>([]);
@@ -100,6 +103,8 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
         setTipoDocumentoSelecionado(null);
         setVariaveisDocumento([]);
         setValoresDocumento({});
+        setPreviewDocumento('');
+        setPreviewDocumentoToken('');
         if (tiposDocumentos.length > 0) return;
 
         setIsLoadingTipos(true);
@@ -118,6 +123,8 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
         setTipoDocumentoSelecionado(tipoId || null);
         setVariaveisDocumento([]);
         setValoresDocumento({});
+        setPreviewDocumento('');
+        setPreviewDocumentoToken('');
         setDocumentoError('');
         if (!tipoId) return;
 
@@ -134,33 +141,72 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
         }
     };
 
-    const handleGenerateDocumento = async () => {
-        if (!tipoDocumentoSelecionado) return;
-        const missing = variaveisDocumento.find((variavel) => !valoresDocumento[variavel.nome_variavel]?.trim());
+    const validateDocumentoFields = () => {
+        const missing = variaveisDocumento.find((variavel) => variavel.obrigatorio && !valoresDocumento[variavel.nome_variavel]?.trim());
         if (missing) {
             setDocumentoError(`Preencha o campo: ${missing.texto_exibido_usuario || missing.nome_variavel}.`);
-            return;
+            return false;
         }
+        return true;
+    };
+
+    const handlePreviewDocumento = async () => {
+        if (!tipoDocumentoSelecionado) return;
+        if (!validateDocumentoFields()) return;
 
         setIsGeneratingDocumento(true);
         setDocumentoError('');
         try {
             const payload = Object.fromEntries(Object.entries(valoresDocumento).map(([key, value]) => [key, sanitizeText(value)]));
-            const response = await prontuarioService.gerarDocumento(id, tipoDocumentoSelecionado, payload);
-            if (isDocumentoApiError(response.data)) throw new Error(response.data.detalhes || response.data.erro);
+            const response = await prontuarioService.previewDocumento(id, tipoDocumentoSelecionado, payload);
+            setPreviewDocumento(response.data.conteudo);
+            setPreviewDocumentoToken(response.data.preview_token);
+        } catch (err: any) {
+            console.error('Erro ao gerar prévia:', err);
+            const detail = err.response?.data?.detail;
+            setDocumentoError(typeof detail === 'string' ? detail : detail?.mensagem || 'Não foi possível gerar a prévia.');
+        } finally {
+            setIsGeneratingDocumento(false);
+        }
+    };
 
-            const documento: Documento = { ...response.data, caminho_arquivo: null, assinaturas: [] };
+    const handleGenerateDocumento = async () => {
+        if (!tipoDocumentoSelecionado || !previewDocumento || !previewDocumentoToken) return;
+        setIsGeneratingDocumento(true);
+        setDocumentoError('');
+        try {
+            const response = await prontuarioService.criarRascunhoDocumento(id, previewDocumentoToken);
+
+            const documento: Documento = response.data;
             setDocumentos((current) => [documento, ...current]);
             setDocVisualizar(documento);
             setConteudoDocumento(documento.conteudo);
             setShowModalGerarDocumento(false);
             setDocumentosFetched(true);
-            showToast('Documento gerado com sucesso!');
+            setPreviewDocumento('');
+            setPreviewDocumentoToken('');
+            showToast('Rascunho criado. Revise e finalize quando estiver pronto.');
         } catch (err: any) {
             console.error('Erro ao gerar documento:', err);
             setDocumentoError(err.response?.data?.detail || err.message || 'Não foi possível gerar o documento.');
         } finally {
             setIsGeneratingDocumento(false);
+        }
+    };
+
+    const handleFinalizarDocumento = async () => {
+        if (!docVisualizar || docVisualizar.status !== 'RASCUNHO') return;
+        setIsFinalizingDocumento(true);
+        try {
+            const response = await prontuarioService.finalizarDocumento(id, docVisualizar.id_documento);
+            const updated: Documento = { ...docVisualizar, ...response.data };
+            setDocumentos((current) => current.map((doc) => doc.id_documento === updated.id_documento ? updated : doc));
+            setDocVisualizar(updated);
+            showToast('Documento finalizado. O conteúdo agora está pronto para assinatura.');
+        } catch (err: any) {
+            showToast(err.response?.data?.detail || 'Não foi possível finalizar o documento.', 'error');
+        } finally {
+            setIsFinalizingDocumento(false);
         }
     };
 
@@ -290,8 +336,11 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
         isLoadingTipos,
         isLoadingVariaveis,
         isGeneratingDocumento,
+        previewDocumento,
+        setPreviewDocumento,
         handleOpenGerarDocumento,
         handleSelectTipoDocumento,
+        handlePreviewDocumento,
         handleGenerateDocumento,
         isEditingDocumento,
         setIsEditingDocumento,
@@ -299,8 +348,10 @@ export function useDocumentosAnexos(id: string, showToast: (msg: string, type?: 
         setConteudoDocumento,
         isSavingDocumento,
         isSigningDocumento,
+        isFinalizingDocumento,
         handleStartEditDocumento,
         handleSaveDocumento,
+        handleFinalizarDocumento,
         handleSignDocumento,
 
         // Anexos

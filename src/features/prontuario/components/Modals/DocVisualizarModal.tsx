@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Calendar, Plus, Loader2, Download, Edit3, Save, Send } from 'lucide-react';
+import { FileText, Calendar, Plus, Loader2, Download, Edit3, Save, Send, CheckCircle2 } from 'lucide-react';
 import { Editor } from '@tinymce/tinymce-react';
 import type { Documento } from '@features/prontuario/types';
 import { sanitizeHtml } from '@shared/utils/sanitizeHtml';
@@ -13,11 +13,13 @@ interface DocVisualizarModalProps {
     conteudo: string;
     isSaving: boolean;
     isSigning: boolean;
+    isFinalizing: boolean;
     onStartEdit: (doc: Documento) => void;
     onCancelEdit: () => void;
     onChangeConteudo: (conteudo: string) => void;
     onSave: () => void;
     onSign: () => void;
+    onFinalize: () => void;
 }
 
 export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
@@ -29,11 +31,13 @@ export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
     conteudo,
     isSaving,
     isSigning,
+    isFinalizing,
     onStartEdit,
     onCancelEdit,
     onChangeConteudo,
     onSave,
     onSign,
+    onFinalize,
 }) => {
     if (!documento) return null;
 
@@ -70,6 +74,13 @@ export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
                     >
                         <Plus className="w-5 h-5 rotate-45" />
                     </button>
+                </div>
+
+                <div className="flex items-center gap-2 border-b border-slate-100 px-6 py-2 text-xs dark:border-slate-800">
+                    <span className={`rounded-full px-2.5 py-1 font-semibold ${documento.status === 'RASCUNHO' ? 'bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400' : documento.status === 'ASSINADO' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'}`}>
+                        {documento.status.replaceAll('_', ' ').toLocaleLowerCase('pt-BR')}
+                    </span>
+                    {documento.status === 'RASCUNHO' && <span className="text-slate-500">Pode ser editado até a finalização.</span>}
                 </div>
 
                 {documento.assinaturas?.length > 0 && (
@@ -152,13 +163,18 @@ export const DocVisualizarModal: React.FC<DocVisualizarModalProps> = ({
                         )}
                         Baixar PDF
                     </button>
-                    {documento.assinaturas?.length === 0 && (
+                    {documento.status === 'FINALIZADO' && documento.assinaturas?.length === 0 && (
                         <button onClick={onSign} disabled={isSigning} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 font-semibold text-white hover:bg-emerald-700 disabled:bg-emerald-400">
                             {isSigning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Enviar para assinatura
                         </button>
                     )}
-                    {documento.assinaturas?.length === 0 && (
+                    {documento.status === 'RASCUNHO' && (
                         <button onClick={() => onStartEdit(documento)} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-2.5 font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"><Edit3 className="h-4 w-4" />Editar</button>
+                    )}
+                    {documento.status === 'RASCUNHO' && (
+                        <button onClick={onFinalize} disabled={isFinalizing} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 font-semibold text-white hover:bg-emerald-700 disabled:bg-emerald-400">
+                            {isFinalizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}Finalizar
+                        </button>
                     )}
                     <button
                         onClick={onClose}
