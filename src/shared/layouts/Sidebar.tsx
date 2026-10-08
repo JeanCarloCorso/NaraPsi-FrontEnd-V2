@@ -6,7 +6,8 @@ import {
     Stethoscope,
     ShieldCheck,
     Settings,
-    UserPlus
+    UserPlus,
+    Files
 } from 'lucide-react';
 import { getProfiles } from '@shared/auth/session';
 
@@ -32,6 +33,7 @@ export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
         { name: 'Usuários', path: '/admin/usuarios', icon: Users },
         { name: 'Perfis', path: '/admin/perfis', icon: ShieldCheck },
         { name: 'Novo Psicólogo', path: '/admin/psicologo/novo', icon: UserPlus },
+        { name: 'Modelos de documentos', path: '/admin/documentos', icon: Files },
     ];
 
     const userItems = [

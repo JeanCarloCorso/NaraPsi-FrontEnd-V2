@@ -43,17 +43,17 @@ export function GerarDocumentoModal({
     const busy = isLoadingTipos || isLoadingVariaveis || isGenerating;
 
     return (
-        <div role="dialog" aria-modal="true" aria-labelledby="gerar-documento-title" className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm" onClick={() => !busy && onClose()}>
-            <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900" onClick={(event) => event.stopPropagation()}>
-                <header className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-800">
-                    <div>
+        <div role="dialog" aria-modal="true" aria-labelledby="gerar-documento-title" className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 p-2 backdrop-blur-sm sm:p-4" onClick={() => !busy && onClose()}>
+            <div style={{ maxHeight: 'calc(100dvh - 1rem)' }} className="flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900" onClick={(event) => event.stopPropagation()}>
+                <header className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6 sm:py-4 dark:border-slate-800">
+                    <div className="min-w-0">
                         <h2 id="gerar-documento-title" className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white"><FilePlus2 className="h-5 w-5 text-indigo-500" />Gerar documento</h2>
-                        <p className="mt-1 text-sm text-slate-500">{preview ? 'Revise a prévia antes de criar o rascunho.' : 'Escolha o modelo e confira os dados solicitados.'}</p>
+                        <p className="mt-1 break-words text-sm text-slate-500 dark:text-slate-400">{preview ? 'Revise a prévia antes de criar o rascunho.' : 'Escolha o modelo e confira os dados solicitados.'}</p>
                     </div>
-                    <button type="button" aria-label="Fechar geração de documento" disabled={busy} onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-50 dark:hover:bg-slate-800"><Plus className="h-5 w-5 rotate-45" /></button>
+                    <button type="button" aria-label="Fechar geração de documento" disabled={busy} onClick={onClose} className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-50 dark:hover:bg-slate-800"><Plus className="h-5 w-5 rotate-45" /></button>
                 </header>
 
-                <div className="flex-1 space-y-5 overflow-y-auto p-6">
+                <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
                     {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400">{error}</div>}
 
                     {!preview && <div>
@@ -65,10 +65,10 @@ export function GerarDocumentoModal({
                     </div>}
 
                     {preview ? (
-                        <div className="rounded-xl bg-slate-200 p-3 dark:bg-slate-950">
+                        <div className="overflow-auto rounded-xl bg-slate-200 p-2 sm:p-3 dark:bg-slate-950">
                             <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300"><Eye className="h-4 w-4" />Prévia do documento</div>
                             <article
-                                className="mx-auto min-h-[500px] max-w-[210mm] bg-white px-8 py-10 text-slate-950 shadow-lg [&_table]:w-full"
+                                className="mx-auto min-h-[500px] min-w-[min(210mm,100%)] max-w-[210mm] overflow-hidden bg-white px-4 py-6 text-slate-950 shadow-lg sm:px-8 sm:py-10 [&_img]:h-auto [&_img]:max-w-full [&_table]:w-full"
                                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(preview) }}
                             />
                         </div>
@@ -86,7 +86,7 @@ export function GerarDocumentoModal({
                     )}
                 </div>
 
-                <footer className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4 sm:flex-row sm:justify-end dark:border-slate-800 dark:bg-slate-800/50">
+                <footer className="flex shrink-0 flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:justify-end sm:px-6 dark:border-slate-800 dark:bg-slate-800/50">
                     <button type="button" disabled={busy} onClick={preview ? onBackToFields : onClose} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 font-semibold text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                         {preview && <ArrowLeft className="h-4 w-4" />}{preview ? 'Revisar campos' : 'Cancelar'}
                     </button>

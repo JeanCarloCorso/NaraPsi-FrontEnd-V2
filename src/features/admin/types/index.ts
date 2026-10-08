@@ -75,3 +75,43 @@ export interface PsicologoCreatePayload {
     telefones?: PsicologoTelefonePayload[];
     enderecos?: PsicologoEnderecoPayload[];
 }
+
+export interface TipoDocumentoAdmin {
+    id_tipo_documento: number;
+    nome: string;
+    descricao: string | null;
+    requer_assinatura_psicologo: boolean;
+    requer_assinatura_paciente: boolean;
+    ativo: boolean;
+    quantidade_templates: number;
+}
+
+export type TipoDocumentoPayload = Omit<TipoDocumentoAdmin, 'id_tipo_documento' | 'quantidade_templates'>;
+
+export interface TemplateDocumentoAdmin {
+    id_templates: number;
+    id_tipo_documento: number;
+    tipo_documento: string;
+    modelo: string;
+    versao: number;
+    status: 'RASCUNHO' | 'PUBLICADO' | 'ARQUIVADO';
+    data_criacao: string;
+    data_publicacao: string | null;
+    variaveis: string[];
+    variaveis_nao_cadastradas?: string[];
+}
+
+export interface VariavelTemplateAdmin {
+    id: number;
+    nome_variavel: string;
+    descricao: string;
+    texto_exibido_usuario: string;
+    origem_valor: 'MANUAL' | 'CARREGADO_BD' | 'GERADO_IA';
+    referencia: 'PACIENTE' | 'PSICOLOGO' | 'SQL' | 'NULO';
+    tabela_origem: string | null;
+    coluna_origem: string | null;
+    sql_consulta: string | null;
+    dado_criptografado: boolean;
+}
+
+export type VariavelTemplatePayload = Omit<VariavelTemplateAdmin, 'id'>;

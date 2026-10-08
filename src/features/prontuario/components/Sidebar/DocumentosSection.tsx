@@ -24,7 +24,7 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({
     onNew
 }) => {
     return (
-        <section className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 transition-all overflow-hidden">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all sm:p-6 dark:border-slate-800 dark:bg-slate-900">
             <div className={`flex items-center justify-between ${isOpen ? 'mb-4 pb-3 border-b border-slate-100 dark:border-slate-800' : ''}`}>
                 <button onClick={onToggle} className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-1 text-left">
                     {isOpen ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
@@ -52,17 +52,17 @@ export const DocumentosSection: React.FC<DocumentosSectionProps> = ({
                         documentos.map((doc) => (
                             <div
                                 key={doc.id_documento}
-                                className="group flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 hover:border-primary-200 dark:hover:border-primary-500/30 transition-all"
+                                className="group flex min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 p-3 transition-all hover:border-primary-200 dark:border-slate-800/60 dark:bg-slate-800/40 dark:hover:border-primary-500/30"
                             >
-                                <div className="flex items-center gap-3 overflow-hidden">
+                                <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
                                     <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0">
                                         <FileText className="w-4.5 h-4.5 text-indigo-500" />
                                     </div>
-                                    <div className="overflow-hidden">
+                                    <div className="min-w-0 overflow-hidden">
                                         <h4 className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate pr-2" title={doc.nome}>
                                             {doc.nome}
                                         </h4>
-                                        <div className="flex items-center gap-2 mt-0.5">
+                                        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1.5">
                                             <span className="text-[10px] text-slate-400 dark:text-slate-500">
                                                 {new Date(doc.data_criacao).toLocaleDateString('pt-BR')}
                                             </span>

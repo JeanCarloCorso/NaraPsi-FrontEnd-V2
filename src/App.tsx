@@ -14,6 +14,7 @@ const UsuariosList = lazy(() => import('@features/admin/pages/UsuariosList'))
 const PerfisList = lazy(() => import('./features/admin/pages/PerfisList'))
 const CriarPerfil = lazy(() => import('./features/admin/pages/CriarPerfil'))
 const CriarPsicologo = lazy(() => import('./features/admin/pages/CriarPsicologo'))
+const ModelosDocumentos = lazy(() => import('./features/admin/pages/ModelosDocumentos'))
 
 const pageLoader = (
   <div className="flex min-h-[240px] items-center justify-center" role="status" aria-label="Carregando página">
@@ -45,6 +46,7 @@ function App() {
             <Route path="/admin/perfis" element={<PerfisList />} />
             <Route path="/admin/perfis/novo" element={<CriarPerfil />} />
             <Route path="/admin/psicologo/novo" element={<CriarPsicologo />} />
+            <Route path="/admin/documentos" element={<ModelosDocumentos />} />
           </Route>
         </Route>
         {/* Fallback route */}
