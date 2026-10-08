@@ -1,11 +1,16 @@
 export interface PsicologoResumo {
+    id_psicologo: number;
     nome: string;
     num_pacientes: number;
+    num_pacientes_ativos: number;
+    num_pacientes_inativos: number;
 }
 
 export interface HomeAdmResponse {
     num_psicologos: number;
     num_pacientes: number;
+    num_pacientes_ativos: number;
+    num_pacientes_inativos: number;
     psicologos: PsicologoResumo[];
 }
 
