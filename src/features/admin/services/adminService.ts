@@ -11,7 +11,8 @@ import type {
     TipoDocumentoAdmin,
     TipoDocumentoPayload,
     VariavelTemplateAdmin,
-    VariavelTemplatePayload
+    VariavelTemplatePayload,
+    CamposDocumentoResponse
 } from '../types';
 
 export const adminService = {
@@ -59,6 +60,9 @@ export const adminService = {
     },
     async getTemplatesAdmin(): Promise<TemplateDocumentoAdmin[]> {
         return (await api.get('/admin/documentos/templates')).data;
+    },
+    async getCamposDocumento(): Promise<CamposDocumentoResponse> {
+        return (await api.get('/admin/documentos/campos-disponiveis')).data;
     },
     async criarTemplate(idTipo: number, modelo: string): Promise<TemplateDocumentoAdmin> {
         return (await api.post('/admin/documentos/templates', { id_tipo_documento: idTipo, modelo })).data;

@@ -99,6 +99,28 @@ export interface TemplateDocumentoAdmin {
     data_publicacao: string | null;
     variaveis: string[];
     variaveis_nao_cadastradas?: string[];
+    campos?: TemplateFieldAdmin[];
+}
+
+export interface TemplateFieldAdmin {
+    expressao: string;
+    nome: string;
+    origem: 'context' | 'manual' | 'ai' | 'legacy' | 'invalid';
+    rotulo: string;
+    tipo_input: 'text' | 'textarea' | 'date';
+    obrigatorio: boolean;
+}
+
+export interface CampoDocumentoDisponivel {
+    group: string;
+    path: string;
+    label: string;
+}
+
+export interface CamposDocumentoResponse {
+    automaticos: CampoDocumentoDisponivel[];
+    sintaxe_manual: string;
+    sintaxe_ia: string;
 }
 
 export interface VariavelTemplateAdmin {
