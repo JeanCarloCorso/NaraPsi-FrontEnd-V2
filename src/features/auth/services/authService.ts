@@ -1,6 +1,5 @@
 import api from '@shared/api/apiClient';
-import { clearSession } from '@shared/auth/session';
-import type { LoginResponse, LoginCredentials } from '../types';
+import type { AuthUser, LoginResponse, LoginCredentials } from '../types';
 
 export const authService = {
     async login(credentials: LoginCredentials): Promise<LoginResponse> {
@@ -17,20 +16,12 @@ export const authService = {
         return response.data;
     },
 
-    saveSession(data: LoginResponse) {
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('nome', data.nome);
-        const perfisNames = Array.isArray(data.perfis)
-            ? data.perfis.map(p => (typeof p === 'string' ? p : p.Perfil))
-            : [];
-        localStorage.setItem('perfis', JSON.stringify(perfisNames));
+    async getSession(): Promise<AuthUser> {
+        const response = await api.get<AuthUser>('/session');
+        return response.data;
     },
 
     async logout() {
         await api.post('/logout');
-    },
-
-    clearSession() {
-        clearSession();
     }
 };

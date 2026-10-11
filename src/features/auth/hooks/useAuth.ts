@@ -2,12 +2,15 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { sanitizeText } from '@shared/utils/validators';
+import { useAuthSession } from '@shared/auth/authContext';
+import { getDefaultRoute, getProfileNames } from '@shared/auth/session';
 
 export function useAuth() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState<{ username?: string; password?: string }>({});
     const navigate = useNavigate();
+    const { setUser } = useAuthSession();
 
     const login = useCallback(async (usernameInput: string, passwordInput: string) => {
         setIsLoading(true);
@@ -34,23 +37,8 @@ export function useAuth() {
                 password
             });
 
-            authService.saveSession(data);
-
-            if (data.perfis && data.perfis.length > 0) {
-                const isAdmin = data.perfis.some(p =>
-                    (typeof p === 'string' ? p : p.Perfil) === 'Administrador'
-                );
-
-                if (isAdmin) {
-                    navigate('/admin/dashboard');
-                } else if (data.perfis.some(p => (typeof p === 'string' ? p : p.Perfil) === 'Psicologo')) {
-                    navigate('/dashboard');
-                } else {
-                    navigate('/paciente/home');
-                }
-            } else {
-                navigate('/');
-            }
+            setUser(data);
+            navigate(getDefaultRoute(getProfileNames(data.perfis)));
             return true;
         } catch (err: any) {
             setError(
@@ -60,7 +48,7 @@ export function useAuth() {
         } finally {
             setIsLoading(false);
         }
-    }, [navigate]);
+    }, [navigate, setUser]);
 
     return {
         login,

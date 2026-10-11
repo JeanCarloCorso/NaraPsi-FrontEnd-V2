@@ -9,7 +9,8 @@ import {
     UserPlus,
     Files
 } from 'lucide-react';
-import { getProfiles } from '@shared/auth/session';
+import { useAuthSession } from '@shared/auth/authContext';
+import { getProfileNames } from '@shared/auth/session';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -18,7 +19,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, setIsOpen, isMobile }: SidebarProps) {
-    const perfisList = getProfiles();
+    const { user } = useAuthSession();
+    const perfisList = getProfileNames(user?.perfis);
     const isAdmin = perfisList.includes('Administrador');
     const isPsicologo = perfisList.includes('Psicologo');
     const isPaciente = perfisList.includes('Usuario') || perfisList.includes('Paciente');

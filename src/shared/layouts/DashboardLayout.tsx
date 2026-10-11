@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
-import { getAccessToken } from '@shared/auth/session';
+import { useAuthSession } from '@shared/auth/authContext';
 
 export default function DashboardLayout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
 
-    // Authentication check
-    const isAuthenticated = !!getAccessToken();
+    const { user, isLoading } = useAuthSession();
 
     useEffect(() => {
         const handleResize = () => {
@@ -31,7 +30,11 @@ export default function DashboardLayout() {
         setIsSidebarOpen(!isSidebarOpen);
     };
 
-    if (!isAuthenticated) {
+    if (isLoading) {
+        return <div className="flex min-h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" /></div>;
+    }
+
+    if (!user) {
         return <Navigate to="/" replace />;
     }
 

@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Menu, User, UserCircle, LogOut, Sun, Moon } from 'lucide-react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { authService } from '@features/auth/services/authService';
-import { getProfiles } from '@shared/auth/session';
+import { useAuthSession } from '@shared/auth/authContext';
+import { getProfileNames } from '@shared/auth/session';
 
 interface TopbarProps {
     toggleSidebar: () => void;
@@ -16,6 +17,7 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
     const navigate = useNavigate();
+    const { user, setUser } = useAuthSession();
 
     useEffect(() => {
         // Apply theme on mount and when it changes
@@ -32,9 +34,9 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
         setTheme(prev => prev === 'light' ? 'dark' : 'light');
     };
 
-    const nome = localStorage.getItem('nome') || 'Usuário';
+    const nome = user?.nome || 'Usuário';
     let perfilName = 'Visitante';
-    const perfisList = getProfiles();
+    const perfisList = getProfileNames(user?.perfis);
     if (perfisList.length > 0) perfilName = perfisList[0];
 
     const canEditProfile = perfisList.includes('Psicologo');
@@ -70,7 +72,7 @@ export default function Topbar({ toggleSidebar }: TopbarProps) {
         } catch {
             // O logout local deve funcionar mesmo se a API estiver indisponível.
         }
-        authService.clearSession();
+        setUser(null);
         navigate('/');
     };
 

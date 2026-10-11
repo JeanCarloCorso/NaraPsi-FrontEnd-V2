@@ -3,6 +3,7 @@ import { maskCPF, maskRG, maskCEP, maskPhone, cleanDigits } from '@shared/utils/
 import { isValidEmail, isValidCPF, isValidDate, sanitizeText, formatEmail } from '@shared/utils/validators';
 import { profileService } from '../services/profileService';
 import type { ProfileEditPayload } from '../types';
+import { useAuthSession } from '@shared/auth/authContext';
 
 interface NotificationState {
     type: 'success' | 'error' | 'info';
@@ -10,6 +11,7 @@ interface NotificationState {
 }
 
 export function useProfileForm() {
+    const { updateName } = useAuthSession();
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingSenha, setIsSavingSenha] = useState(false);
@@ -252,7 +254,7 @@ export function useProfileForm() {
             await profileService.updateProfile(payload);
             setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
 
-            if (formData.nome) localStorage.setItem('nome', formData.nome);
+            if (formData.nome) updateName(formData.nome);
         } catch (err: any) {
             setMessage({ type: 'error', text: err.response?.data?.message || 'Erro ao salvar perfil.' });
         } finally {
